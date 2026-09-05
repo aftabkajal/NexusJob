@@ -1,0 +1,565 @@
+<title>NexusJob Color Themes</title>
+<style>
+/*
+  NexusJob — Color Theme Picker (light mode only)
+  Six directions, all within the "confident & modern" register
+  (bold, high-contrast, sharp — not warm/soft, not muted/beige, not utilitarian-dense).
+  Each .theme-* block below documents its exact hex values.
+*/
+
+:root{
+  color-scheme: light;
+}
+
+*{ box-sizing: border-box; }
+
+body{
+  margin:0;
+  background:#EAEAEE;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color:#1A1A1A;
+}
+
+.page-header{
+  padding: 32px 32px 12px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.page-header h1{
+  font-size: 26px;
+  margin: 0 0 6px;
+  letter-spacing: -0.02em;
+}
+.page-header p{
+  margin:0;
+  color:#54545C;
+  font-size: 14px;
+  max-width: 760px;
+  line-height: 1.5;
+}
+
+.themes-grid{
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(370px, 1fr));
+  gap: 24px;
+  padding: 20px 32px 48px;
+  max-width: 1400px;
+  margin: 0 auto;
+  align-items: start;
+}
+
+.theme{
+  background: var(--bg);
+  border-radius: 16px;
+  padding: 22px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.05);
+}
+
+.theme-head h2{
+  margin:0 0 4px;
+  font-size: 19px;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+.theme-head .register{
+  margin: 0 0 18px;
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.45;
+}
+
+.chips{
+  display:grid;
+  grid-template-columns: repeat(auto-fill, minmax(102px, 1fr));
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.chip{
+  border:1px solid var(--border);
+  border-radius: 10px;
+  overflow:hidden;
+  background: var(--surface);
+}
+.chip-swatch{
+  height: 40px;
+  width: 100%;
+}
+.chip-label{
+  padding: 6px 8px 7px;
+}
+.chip-name{
+  display:block;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.chip-hex{
+  display:block;
+  font-size: 11px;
+  color: var(--text-2);
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  margin-top: 1px;
+}
+
+/* ---- shared UI snippet styling (colors come from each theme's variables) ---- */
+.app-chrome{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding: 10px 14px;
+  border-radius: 10px 10px 0 0;
+  background: var(--primary);
+}
+.wordmark{
+  color: var(--primary-fg);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: -0.01em;
+}
+.chrome-nav{
+  color: var(--primary-fg);
+  opacity: 0.72;
+  font-size: 11.5px;
+}
+
+.job-card{
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 10px 10px;
+  padding: 18px;
+}
+.job-card-top{
+  display:flex;
+  align-items:flex-start;
+  gap: 12px;
+}
+.logo-badge{
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+  background: var(--primary);
+  color: var(--primary-fg);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight: 700;
+  font-size: 15px;
+}
+.job-card-top h3{
+  margin: 0;
+  font-size: 15.5px;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+.job-card-top .company{
+  margin: 2px 0 0;
+  font-size: 12.5px;
+  color: var(--text-2);
+}
+.badge-pill{
+  margin-left: auto;
+  align-self: center;
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 4px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--text-2);
+  white-space: nowrap;
+}
+.job-meta{
+  margin: 12px 0 0;
+  font-size: 12.5px;
+  color: var(--text-2);
+}
+.job-desc{
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.5;
+}
+.job-card-actions{
+  margin-top: 16px;
+  display:flex;
+  align-items:center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.btn-apply{
+  background: var(--accent);
+  color: var(--accent-fg);
+  border: none;
+  border-radius: 8px;
+  padding: 9px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: default;
+}
+.confirm-note{
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--success);
+}
+
+/* =========================================================
+   THEME A — Nexus Indigo
+   Sharp, tech-forward confidence with a cool electric edge.
+   background:#F5F6FB  surface:#FFFFFF
+   primary:#23215E  primary-foreground:#FFFFFF
+   accent:#0EA5C4  accent-foreground:#FFFFFF
+   text-primary:#1A1B2E  text-secondary:#5B5E78
+   border:#DFE1F0
+   success:#0F9D58  success-subtle:#E3F6EA
+   danger:#D6304A  danger-subtle:#FBE4E8
+   ========================================================= */
+.theme-a{
+  --bg:#F5F6FB; --surface:#FFFFFF;
+  --primary:#23215E; --primary-fg:#FFFFFF;
+  --accent:#0EA5C4; --accent-fg:#FFFFFF;
+  --text:#1A1B2E; --text-2:#5B5E78;
+  --border:#DFE1F0;
+  --success:#0F9D58; --success-bg:#E3F6EA;
+  --danger:#D6304A; --danger-bg:#FBE4E8;
+}
+
+/* =========================================================
+   THEME B — Obsidian Amber
+   Luxury-editorial boldness: ink black grounded by a warm gold signal.
+   background:#F6F4EF  surface:#FFFFFF
+   primary:#14120F  primary-foreground:#FFFFFF
+   accent:#D3910F  accent-foreground:#14120F
+   text-primary:#14120F  text-secondary:#6B6559
+   border:#E7E2D6
+   success:#1E7A46  success-subtle:#E7F2EA
+   danger:#B3261E  danger-subtle:#F7E6E4
+   ========================================================= */
+.theme-b{
+  --bg:#F6F4EF; --surface:#FFFFFF;
+  --primary:#14120F; --primary-fg:#FFFFFF;
+  --accent:#D3910F; --accent-fg:#14120F;
+  --text:#14120F; --text-2:#6B6559;
+  --border:#E7E2D6;
+  --success:#1E7A46; --success-bg:#E7F2EA;
+  --danger:#B3261E; --danger-bg:#F7E6E4;
+}
+
+/* =========================================================
+   THEME C — Signal Crimson
+   Stark, high-contrast editorial with a jolt of red urgency.
+   background:#FAFAFA  surface:#FFFFFF
+   primary:#17181C  primary-foreground:#FFFFFF
+   accent:#E0102A  accent-foreground:#FFFFFF
+   text-primary:#17181C  text-secondary:#6E7076
+   border:#E5E5E8
+   success:#16803D  success-subtle:#E5F3EA
+   danger:#8C1015  danger-subtle:#F5E4E5
+   ========================================================= */
+.theme-c{
+  --bg:#FAFAFA; --surface:#FFFFFF;
+  --primary:#17181C; --primary-fg:#FFFFFF;
+  --accent:#E0102A; --accent-fg:#FFFFFF;
+  --text:#17181C; --text-2:#6E7076;
+  --border:#E5E5E8;
+  --success:#16803D; --success-bg:#E5F3EA;
+  --danger:#8C1015; --danger-bg:#F5E4E5;
+}
+
+/* =========================================================
+   THEME D — Verdant Slate
+   Confident growth energy laid over cool, disciplined slate.
+   background:#F5F7F6  surface:#FFFFFF
+   primary:#10233A  primary-foreground:#FFFFFF
+   accent:#0E9F6E  accent-foreground:#FFFFFF
+   text-primary:#10233A  text-secondary:#56697A
+   border:#DCE4E1
+   success:#0E9F6E  success-subtle:#DFF3EA
+   danger:#C13515  danger-subtle:#F7E5DE
+   ========================================================= */
+.theme-d{
+  --bg:#F5F7F6; --surface:#FFFFFF;
+  --primary:#10233A; --primary-fg:#FFFFFF;
+  --accent:#0E9F6E; --accent-fg:#FFFFFF;
+  --text:#10233A; --text-2:#56697A;
+  --border:#DCE4E1;
+  --success:#0E9F6E; --success-bg:#DFF3EA;
+  --danger:#C13515; --danger-bg:#F7E5DE;
+}
+
+/* =========================================================
+   THEME E — Violet Voltage
+   High-energy startup voltage: deep violet-black with an electric spark.
+   background:#F8F6FC  surface:#FFFFFF
+   primary:#1D1A33  primary-foreground:#FFFFFF
+   accent:#7C3AED  accent-foreground:#FFFFFF
+   text-primary:#1D1A33  text-secondary:#635F78
+   border:#E6E1F2
+   success:#0E9F6E  success-subtle:#E1F4EC
+   danger:#D6304A  danger-subtle:#FAE3E8
+   ========================================================= */
+.theme-e{
+  --bg:#F8F6FC; --surface:#FFFFFF;
+  --primary:#1D1A33; --primary-fg:#FFFFFF;
+  --accent:#7C3AED; --accent-fg:#FFFFFF;
+  --text:#1D1A33; --text-2:#635F78;
+  --border:#E6E1F2;
+  --success:#0E9F6E; --success-bg:#E1F4EC;
+  --danger:#D6304A; --danger-bg:#FAE3E8;
+}
+
+/* =========================================================
+   THEME F — Tangerine Ink
+   Bold ink-black precision punctuated by a confident tangerine spark.
+   background:#F7F5F1  surface:#FFFFFF
+   primary:#171512  primary-foreground:#FFFFFF
+   accent:#E15A1D  accent-foreground:#FFFFFF
+   text-primary:#171512  text-secondary:#6E675D
+   border:#E8E3D9
+   success:#1E7A46  success-subtle:#E7F2EA
+   danger:#B3261E  danger-subtle:#F7E6E4
+   ========================================================= */
+.theme-f{
+  --bg:#F7F5F1; --surface:#FFFFFF;
+  --primary:#171512; --primary-fg:#FFFFFF;
+  --accent:#E15A1D; --accent-fg:#FFFFFF;
+  --text:#171512; --text-2:#6E675D;
+  --border:#E8E3D9;
+  --success:#1E7A46; --success-bg:#E7F2EA;
+  --danger:#B3261E; --danger-bg:#F7E6E4;
+}
+</style>
+
+<header class="page-header">
+  <h1>NexusJob — Color Theme Directions</h1>
+  <p>Six palette directions, all within the confident &amp; modern brand register (bold type energy, high contrast, a bit of edge — not warm/soft, not muted/corporate-beige, not utilitarian-dense). Each varies accent-color family, contrast level, and neutral warmth so they read as genuinely distinct choices, not near-identical pastels. Light mode only.</p>
+</header>
+
+<main class="themes-grid">
+
+  <!-- THEME A -->
+  <section class="theme theme-a">
+    <div class="theme-head">
+      <h2>Nexus Indigo</h2>
+      <p class="register">Sharp, tech-forward confidence with a cool electric edge.</p>
+    </div>
+    <div class="chips">
+      <div class="chip"><div class="chip-swatch" style="background:#F5F6FB"></div><div class="chip-label"><span class="chip-name">Background</span><span class="chip-hex">#F5F6FB</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#FFFFFF"></div><div class="chip-label"><span class="chip-name">Surface</span><span class="chip-hex">#FFFFFF</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#23215E"></div><div class="chip-label"><span class="chip-name">Primary</span><span class="chip-hex">#23215E</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#FFFFFF;border-bottom:1px solid #DFE1F0"></div><div class="chip-label"><span class="chip-name">Primary-fg</span><span class="chip-hex">#FFFFFF</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#0EA5C4"></div><div class="chip-label"><span class="chip-name">Accent</span><span class="chip-hex">#0EA5C4</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#1A1B2E"></div><div class="chip-label"><span class="chip-name">Text primary</span><span class="chip-hex">#1A1B2E</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#5B5E78"></div><div class="chip-label"><span class="chip-name">Text secondary</span><span class="chip-hex">#5B5E78</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#DFE1F0"></div><div class="chip-label"><span class="chip-name">Border</span><span class="chip-hex">#DFE1F0</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#0F9D58"></div><div class="chip-label"><span class="chip-name">Success</span><span class="chip-hex">#0F9D58</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#D6304A"></div><div class="chip-label"><span class="chip-name">Danger</span><span class="chip-hex">#D6304A</span></div></div>
+    </div>
+    <div class="app-chrome"><span class="wordmark">NexusJob</span><span class="chrome-nav">Jobs · Applications · Profile</span></div>
+    <div class="job-card">
+      <div class="job-card-top">
+        <div class="logo-badge">M</div>
+        <div>
+          <h3>Senior Backend Engineer</h3>
+          <p class="company">Meridian Health · Remote</p>
+        </div>
+        <span class="badge-pill">Full-time</span>
+      </div>
+      <p class="job-meta">$140K&ndash;$170K · Posted 2 days ago</p>
+      <p class="job-desc">Own our payments infrastructure as NexusJob scales to 2M+ job seekers.</p>
+      <div class="job-card-actions">
+        <button class="btn-apply">Apply now</button>
+        <span class="confirm-note">&#10003; Account confirmed to apply</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- THEME B -->
+  <section class="theme theme-b">
+    <div class="theme-head">
+      <h2>Obsidian Amber</h2>
+      <p class="register">Luxury-editorial boldness: ink black grounded by a warm gold signal.</p>
+    </div>
+    <div class="chips">
+      <div class="chip"><div class="chip-swatch" style="background:#F6F4EF"></div><div class="chip-label"><span class="chip-name">Background</span><span class="chip-hex">#F6F4EF</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#FFFFFF"></div><div class="chip-label"><span class="chip-name">Surface</span><span class="chip-hex">#FFFFFF</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#14120F"></div><div class="chip-label"><span class="chip-name">Primary</span><span class="chip-hex">#14120F</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#FFFFFF;border-bottom:1px solid #E7E2D6"></div><div class="chip-label"><span class="chip-name">Primary-fg</span><span class="chip-hex">#FFFFFF</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#D3910F"></div><div class="chip-label"><span class="chip-name">Accent</span><span class="chip-hex">#D3910F</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#14120F"></div><div class="chip-label"><span class="chip-name">Text primary</span><span class="chip-hex">#14120F</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#6B6559"></div><div class="chip-label"><span class="chip-name">Text secondary</span><span class="chip-hex">#6B6559</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#E7E2D6"></div><div class="chip-label"><span class="chip-name">Border</span><span class="chip-hex">#E7E2D6</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#1E7A46"></div><div class="chip-label"><span class="chip-name">Success</span><span class="chip-hex">#1E7A46</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#B3261E"></div><div class="chip-label"><span class="chip-name">Danger</span><span class="chip-hex">#B3261E</span></div></div>
+    </div>
+    <div class="app-chrome"><span class="wordmark">NexusJob</span><span class="chrome-nav">Jobs · Applications · Profile</span></div>
+    <div class="job-card">
+      <div class="job-card-top">
+        <div class="logo-badge">M</div>
+        <div>
+          <h3>Senior Backend Engineer</h3>
+          <p class="company">Meridian Health · Remote</p>
+        </div>
+        <span class="badge-pill">Full-time</span>
+      </div>
+      <p class="job-meta">$140K&ndash;$170K · Posted 2 days ago</p>
+      <p class="job-desc">Own our payments infrastructure as NexusJob scales to 2M+ job seekers.</p>
+      <div class="job-card-actions">
+        <button class="btn-apply">Apply now</button>
+        <span class="confirm-note">&#10003; Account confirmed to apply</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- THEME C -->
+  <section class="theme theme-c">
+    <div class="theme-head">
+      <h2>Signal Crimson</h2>
+      <p class="register">Stark, high-contrast editorial with a jolt of red urgency.</p>
+    </div>
+    <div class="chips">
+      <div class="chip"><div class="chip-swatch" style="background:#FAFAFA"></div><div class="chip-label"><span class="chip-name">Background</span><span class="chip-hex">#FAFAFA</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#FFFFFF"></div><div class="chip-label"><span class="chip-name">Surface</span><span class="chip-hex">#FFFFFF</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#17181C"></div><div class="chip-label"><span class="chip-name">Primary</span><span class="chip-hex">#17181C</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#FFFFFF;border-bottom:1px solid #E5E5E8"></div><div class="chip-label"><span class="chip-name">Primary-fg</span><span class="chip-hex">#FFFFFF</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#E0102A"></div><div class="chip-label"><span class="chip-name">Accent</span><span class="chip-hex">#E0102A</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#17181C"></div><div class="chip-label"><span class="chip-name">Text primary</span><span class="chip-hex">#17181C</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#6E7076"></div><div class="chip-label"><span class="chip-name">Text secondary</span><span class="chip-hex">#6E7076</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#E5E5E8"></div><div class="chip-label"><span class="chip-name">Border</span><span class="chip-hex">#E5E5E8</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#16803D"></div><div class="chip-label"><span class="chip-name">Success</span><span class="chip-hex">#16803D</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#8C1015"></div><div class="chip-label"><span class="chip-name">Danger</span><span class="chip-hex">#8C1015</span></div></div>
+    </div>
+    <div class="app-chrome"><span class="wordmark">NexusJob</span><span class="chrome-nav">Jobs · Applications · Profile</span></div>
+    <div class="job-card">
+      <div class="job-card-top">
+        <div class="logo-badge">M</div>
+        <div>
+          <h3>Senior Backend Engineer</h3>
+          <p class="company">Meridian Health · Remote</p>
+        </div>
+        <span class="badge-pill">Full-time</span>
+      </div>
+      <p class="job-meta">$140K&ndash;$170K · Posted 2 days ago</p>
+      <p class="job-desc">Own our payments infrastructure as NexusJob scales to 2M+ job seekers.</p>
+      <div class="job-card-actions">
+        <button class="btn-apply">Apply now</button>
+        <span class="confirm-note">&#10003; Account confirmed to apply</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- THEME D -->
+  <section class="theme theme-d">
+    <div class="theme-head">
+      <h2>Verdant Slate</h2>
+      <p class="register">Confident growth energy laid over cool, disciplined slate.</p>
+    </div>
+    <div class="chips">
+      <div class="chip"><div class="chip-swatch" style="background:#F5F7F6"></div><div class="chip-label"><span class="chip-name">Background</span><span class="chip-hex">#F5F7F6</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#FFFFFF"></div><div class="chip-label"><span class="chip-name">Surface</span><span class="chip-hex">#FFFFFF</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#10233A"></div><div class="chip-label"><span class="chip-name">Primary</span><span class="chip-hex">#10233A</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#FFFFFF;border-bottom:1px solid #DCE4E1"></div><div class="chip-label"><span class="chip-name">Primary-fg</span><span class="chip-hex">#FFFFFF</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#0E9F6E"></div><div class="chip-label"><span class="chip-name">Accent</span><span class="chip-hex">#0E9F6E</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#10233A"></div><div class="chip-label"><span class="chip-name">Text primary</span><span class="chip-hex">#10233A</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#56697A"></div><div class="chip-label"><span class="chip-name">Text secondary</span><span class="chip-hex">#56697A</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#DCE4E1"></div><div class="chip-label"><span class="chip-name">Border</span><span class="chip-hex">#DCE4E1</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#0E9F6E"></div><div class="chip-label"><span class="chip-name">Success</span><span class="chip-hex">#0E9F6E</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#C13515"></div><div class="chip-label"><span class="chip-name">Danger</span><span class="chip-hex">#C13515</span></div></div>
+    </div>
+    <div class="app-chrome"><span class="wordmark">NexusJob</span><span class="chrome-nav">Jobs · Applications · Profile</span></div>
+    <div class="job-card">
+      <div class="job-card-top">
+        <div class="logo-badge">M</div>
+        <div>
+          <h3>Senior Backend Engineer</h3>
+          <p class="company">Meridian Health · Remote</p>
+        </div>
+        <span class="badge-pill">Full-time</span>
+      </div>
+      <p class="job-meta">$140K&ndash;$170K · Posted 2 days ago</p>
+      <p class="job-desc">Own our payments infrastructure as NexusJob scales to 2M+ job seekers.</p>
+      <div class="job-card-actions">
+        <button class="btn-apply">Apply now</button>
+        <span class="confirm-note">&#10003; Account confirmed to apply</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- THEME E -->
+  <section class="theme theme-e">
+    <div class="theme-head">
+      <h2>Violet Voltage</h2>
+      <p class="register">High-energy startup voltage: deep violet-black with an electric spark.</p>
+    </div>
+    <div class="chips">
+      <div class="chip"><div class="chip-swatch" style="background:#F8F6FC"></div><div class="chip-label"><span class="chip-name">Background</span><span class="chip-hex">#F8F6FC</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#FFFFFF"></div><div class="chip-label"><span class="chip-name">Surface</span><span class="chip-hex">#FFFFFF</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#1D1A33"></div><div class="chip-label"><span class="chip-name">Primary</span><span class="chip-hex">#1D1A33</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#FFFFFF;border-bottom:1px solid #E6E1F2"></div><div class="chip-label"><span class="chip-name">Primary-fg</span><span class="chip-hex">#FFFFFF</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#7C3AED"></div><div class="chip-label"><span class="chip-name">Accent</span><span class="chip-hex">#7C3AED</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#1D1A33"></div><div class="chip-label"><span class="chip-name">Text primary</span><span class="chip-hex">#1D1A33</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#635F78"></div><div class="chip-label"><span class="chip-name">Text secondary</span><span class="chip-hex">#635F78</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#E6E1F2"></div><div class="chip-label"><span class="chip-name">Border</span><span class="chip-hex">#E6E1F2</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#0E9F6E"></div><div class="chip-label"><span class="chip-name">Success</span><span class="chip-hex">#0E9F6E</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#D6304A"></div><div class="chip-label"><span class="chip-name">Danger</span><span class="chip-hex">#D6304A</span></div></div>
+    </div>
+    <div class="app-chrome"><span class="wordmark">NexusJob</span><span class="chrome-nav">Jobs · Applications · Profile</span></div>
+    <div class="job-card">
+      <div class="job-card-top">
+        <div class="logo-badge">M</div>
+        <div>
+          <h3>Senior Backend Engineer</h3>
+          <p class="company">Meridian Health · Remote</p>
+        </div>
+        <span class="badge-pill">Full-time</span>
+      </div>
+      <p class="job-meta">$140K&ndash;$170K · Posted 2 days ago</p>
+      <p class="job-desc">Own our payments infrastructure as NexusJob scales to 2M+ job seekers.</p>
+      <div class="job-card-actions">
+        <button class="btn-apply">Apply now</button>
+        <span class="confirm-note">&#10003; Account confirmed to apply</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- THEME F -->
+  <section class="theme theme-f">
+    <div class="theme-head">
+      <h2>Tangerine Ink</h2>
+      <p class="register">Bold ink-black precision punctuated by a confident tangerine spark.</p>
+    </div>
+    <div class="chips">
+      <div class="chip"><div class="chip-swatch" style="background:#F7F5F1"></div><div class="chip-label"><span class="chip-name">Background</span><span class="chip-hex">#F7F5F1</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#FFFFFF"></div><div class="chip-label"><span class="chip-name">Surface</span><span class="chip-hex">#FFFFFF</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#171512"></div><div class="chip-label"><span class="chip-name">Primary</span><span class="chip-hex">#171512</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#FFFFFF;border-bottom:1px solid #E8E3D9"></div><div class="chip-label"><span class="chip-name">Primary-fg</span><span class="chip-hex">#FFFFFF</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#E15A1D"></div><div class="chip-label"><span class="chip-name">Accent</span><span class="chip-hex">#E15A1D</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#171512"></div><div class="chip-label"><span class="chip-name">Text primary</span><span class="chip-hex">#171512</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#6E675D"></div><div class="chip-label"><span class="chip-name">Text secondary</span><span class="chip-hex">#6E675D</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#E8E3D9"></div><div class="chip-label"><span class="chip-name">Border</span><span class="chip-hex">#E8E3D9</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#1E7A46"></div><div class="chip-label"><span class="chip-name">Success</span><span class="chip-hex">#1E7A46</span></div></div>
+      <div class="chip"><div class="chip-swatch" style="background:#B3261E"></div><div class="chip-label"><span class="chip-name">Danger</span><span class="chip-hex">#B3261E</span></div></div>
+    </div>
+    <div class="app-chrome"><span class="wordmark">NexusJob</span><span class="chrome-nav">Jobs · Applications · Profile</span></div>
+    <div class="job-card">
+      <div class="job-card-top">
+        <div class="logo-badge">M</div>
+        <div>
+          <h3>Senior Backend Engineer</h3>
+          <p class="company">Meridian Health · Remote</p>
+        </div>
+        <span class="badge-pill">Full-time</span>
+      </div>
+      <p class="job-meta">$140K&ndash;$170K · Posted 2 days ago</p>
+      <p class="job-desc">Own our payments infrastructure as NexusJob scales to 2M+ job seekers.</p>
+      <div class="job-card-actions">
+        <button class="btn-apply">Apply now</button>
+        <span class="confirm-note">&#10003; Account confirmed to apply</span>
+      </div>
+    </div>
+  </section>
+
+</main>

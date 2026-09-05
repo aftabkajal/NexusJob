@@ -1,0 +1,222 @@
+<!--
+Illustrates:
+  DESIGN.md: Colors (background, surface, primary, accent, text-primary, text-secondary, border);
+    Typography (heading, heading-sm, body, body-sm, label, caption); Shapes (rounded.lg card/logo,
+    rounded.md button/input, rounded.xl modal, rounded.full logo mark); Elevation & Depth
+    (apply-gate-modal shadow 0 20px 48px + scrim rgba(26,27,46,.55)); Components (apply-button,
+    auth-role-toggle, apply-gate-modal).
+  EXPERIENCE.md: Information Architecture (Job posting detail surface); Component Patterns
+    (apply-button — signed-out click opens apply-gate-modal; auth-role-toggle — pre-set/fixed to
+    Job Seeker inside the modal, Company visually present but not the entry point);
+    State Patterns (Job posting detail canonical/resting state; Apply-gate modal open state);
+    Interaction Primitives (modal opens over dimmed detail, focus moves to first field, focus trap);
+    Key Flow 2 (Amara), steps 3-4 (reads posting detail, clicks Apply -> apply-gate opens inline,
+    no navigation, role toggle set to Job Seeker).
+  Two states shown side by side: (a) posting detail at rest, signed-out visitor; (b) same posting
+  detail with the apply-gate-modal open on top.
+-->
+<title>Job Posting Detail — NexusJob</title>
+<style>
+  :root{
+    --bg:#F5F6FB; --surface:#FFFFFF; --primary:#23215E; --primary-fg:#FFFFFF;
+    --accent:#0A7A90; --accent-fg:#FFFFFF; --text:#1A1B2E; --text2:#5B5E78;
+    --border:#DFE1F0; --success:#0B7A42; --success-bg:#E3F6EA; --danger:#C42744; --danger-bg:#FBE4E8;
+    --r-sm:6px; --r-md:10px; --r-lg:16px; --r-xl:24px; --r-full:9999px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; padding:40px; background:#D9DAE9;
+    font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+    color:var(--text);
+  }
+  .stage{ display:flex; gap:40px; flex-wrap:wrap; align-items:flex-start; }
+  .state-label{
+    font-size:12px; font-weight:600; line-height:1.4; letter-spacing:.04em; text-transform:uppercase;
+    color:#4B4D66; margin:0 0 10px 4px;
+  }
+  .browser-frame{
+    width:900px; max-width:100%; border-radius:12px; overflow:hidden;
+    border:1px solid #C7C9DC; box-shadow:0 12px 28px rgba(26,27,46,.14); background:#fff;
+  }
+  .browser-bar{
+    background:#E4E5F0; padding:10px 14px; display:flex; align-items:center; gap:8px;
+    border-bottom:1px solid var(--border);
+  }
+  .dot{width:11px;height:11px;border-radius:50%;}
+  .dot.r{background:#E5646B;} .dot.y{background:#E8B24B;} .dot.g{background:#59B36B;}
+  .url-pill{
+    margin-left:10px; background:#fff; border:1px solid var(--border); border-radius:999px;
+    padding:5px 16px; font-size:12px; color:var(--text2); flex:1; max-width:500px;
+  }
+  .browser-content{ background:var(--bg); position:relative; min-height:640px; }
+
+  .app-nav{
+    background:var(--primary); color:#fff; display:flex; align-items:center;
+    justify-content:space-between; padding:16px 40px;
+  }
+  .wordmark{ font-weight:700; font-size:19px; letter-spacing:-0.01em; color:#fff; }
+  .nav-links a{
+    color:#fff; text-decoration:none; font-size:13px; font-weight:600; letter-spacing:.04em;
+    margin-left:28px; opacity:.92;
+  }
+
+  .page{ max-width:720px; margin:0 auto; padding:48px 40px 64px; }
+  .back-link{ font-size:14px; color:var(--text2); text-decoration:none; display:inline-block; margin-bottom:24px; }
+
+  .company-row{ display:flex; align-items:center; gap:14px; margin-bottom:20px; }
+  .company-mark{
+    width:44px; height:44px; border-radius:10px; background:var(--primary); color:#fff;
+    display:flex; align-items:center; justify-content:center; font-weight:700; font-size:18px; flex-shrink:0;
+  }
+  .company-name{ font-size:14px; font-weight:400; line-height:1.55; color:var(--text2); }
+  .posting-title{ font-size:28px; font-weight:700; line-height:1.2; letter-spacing:-0.01em; color:var(--text); margin:0 0 6px; }
+  .meta-line{ font-size:14px; color:var(--text2); margin:0 0 32px; }
+
+  .posting-body p{ font-size:16px; line-height:1.6; color:var(--text); margin:0 0 16px; }
+
+  .apply-button{
+    background:var(--accent); color:var(--accent-fg); border:none; border-radius:var(--r-md);
+    padding:12px 28px; font-size:13px; font-weight:600; letter-spacing:.04em; cursor:default; margin-top:8px;
+  }
+
+  /* Modal state */
+  .scrim{
+    position:absolute; inset:0; background:rgba(26,27,46,.55);
+    display:flex; align-items:center; justify-content:center; padding:32px;
+  }
+  .modal-panel{
+    width:400px; max-width:100%; background:var(--surface); border-radius:var(--r-xl);
+    padding:32px; box-shadow:0 20px 48px rgba(26,27,46,.18);
+  }
+  .modal-title{ font-size:28px; font-weight:700; line-height:1.2; letter-spacing:-0.01em; color:var(--text); margin:0 0 6px; }
+  .modal-sub{ font-size:14px; color:var(--text2); margin:0 0 24px; }
+
+  .role-toggle{
+    display:inline-flex; background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--r-full); padding:4px; margin-bottom:24px;
+  }
+  .role-toggle button{
+    border:none; background:transparent; padding:8px 22px; border-radius:var(--r-full);
+    font-size:13px; font-weight:600; letter-spacing:.04em; color:var(--text2); cursor:default;
+  }
+  .role-toggle button.active{ background:var(--primary); color:#fff; }
+  .role-toggle button.disabled-visible{ opacity:.45; }
+
+  .field{ margin-bottom:18px; }
+  label{ display:block; font-size:13px; font-weight:600; letter-spacing:.04em; color:var(--text); margin-bottom:6px; }
+  input{
+    width:100%; padding:11px 14px; border:1px solid var(--border); border-radius:var(--r-sm);
+    font-size:16px; font-family:inherit; color:var(--text); background:var(--surface);
+  }
+  input.mock-focused{ outline:2px solid var(--accent); outline-offset:2px; border-color:var(--accent); }
+
+  .modal-submit{
+    width:100%; background:var(--accent); color:var(--accent-fg); border:none; border-radius:var(--r-md);
+    padding:13px 20px; font-size:13px; font-weight:600; letter-spacing:.04em; cursor:default; margin-top:6px;
+  }
+  .modal-foot{ text-align:center; font-size:13px; color:var(--text2); margin-top:18px; }
+  .modal-foot a{ color:var(--accent); text-decoration:none; }
+</style>
+
+<div class="stage">
+  <div>
+    <p class="state-label">State A — Job posting detail, signed-out visitor (resting)</p>
+    <div class="browser-frame">
+      <div class="browser-bar">
+        <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+        <span class="url-pill">nexusjob.app/postings/482</span>
+      </div>
+      <div class="browser-content">
+        <div class="app-nav">
+          <span class="wordmark">NexusJob</span>
+          <div class="nav-links">
+            <a href="#">Search</a>
+            <a href="#">Sign up / Log in</a>
+          </div>
+        </div>
+        <div class="page">
+          <a class="back-link" href="#">← Back to search results</a>
+          <h1 class="posting-title">Senior Backend Engineer</h1>
+          <div class="company-row">
+            <div class="company-mark">C</div>
+            <div>
+              <div class="company-name">Cobalt Ledger Technologies</div>
+              <div class="meta-line" style="margin:2px 0 0;">Remote · Posted 2 days ago</div>
+            </div>
+          </div>
+          <div class="posting-body">
+            <p>Cobalt Ledger Technologies is hiring a Senior Backend Engineer to lead the design of our
+            core transaction-processing services. You will own the architecture of high-throughput
+            payment and reconciliation systems used by our banking partners, working closely with
+            infrastructure and product teams to ship reliable, auditable code.</p>
+            <p>We're looking for someone with strong experience in distributed systems, relational
+            data modeling, and API design, who is comfortable owning a service from design through
+            production operation.</p>
+          </div>
+          <button class="apply-button">Apply</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <p class="state-label">State B — Apply-gate modal open (focus on first field)</p>
+    <div class="browser-frame">
+      <div class="browser-bar">
+        <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+        <span class="url-pill">nexusjob.app/postings/482</span>
+      </div>
+      <div class="browser-content">
+        <div class="app-nav">
+          <span class="wordmark">NexusJob</span>
+          <div class="nav-links">
+            <a href="#">Search</a>
+            <a href="#">Sign up / Log in</a>
+          </div>
+        </div>
+        <div class="page" style="filter:blur(0.3px);">
+          <a class="back-link" href="#">← Back to search results</a>
+          <h1 class="posting-title">Senior Backend Engineer</h1>
+          <div class="company-row">
+            <div class="company-mark">C</div>
+            <div>
+              <div class="company-name">Cobalt Ledger Technologies</div>
+              <div class="meta-line" style="margin:2px 0 0;">Remote · Posted 2 days ago</div>
+            </div>
+          </div>
+          <div class="posting-body">
+            <p>Cobalt Ledger Technologies is hiring a Senior Backend Engineer to lead the design of our
+            core transaction-processing services. You will own the architecture of high-throughput
+            payment and reconciliation systems used by our banking partners, working closely with
+            infrastructure and product teams to ship reliable, auditable code.</p>
+          </div>
+          <button class="apply-button">Apply</button>
+        </div>
+        <div class="scrim">
+          <div class="modal-panel">
+            <h2 class="modal-title">Sign up to apply</h2>
+            <p class="modal-sub">Create a Job Seeker account to apply to Senior Backend Engineer at Cobalt Ledger Technologies.</p>
+            <div class="role-toggle">
+              <button class="disabled-visible">Company</button>
+              <button class="active">Job Seeker</button>
+            </div>
+            <div class="field">
+              <label for="fn">Full name</label>
+              <input id="fn" class="mock-focused" type="text" placeholder="Amara Whitfield">
+            </div>
+            <div class="field">
+              <label for="em">Email</label>
+              <input id="em" type="email" placeholder="you@example.com">
+            </div>
+            <div class="field">
+              <label for="pw">Password</label>
+              <input id="pw" type="password" placeholder="••••••••">
+            </div>
+            <button class="modal-submit">Sign up &amp; apply</button>
+            <p class="modal-foot">Already have an account? <a href="#">Log in instead</a></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

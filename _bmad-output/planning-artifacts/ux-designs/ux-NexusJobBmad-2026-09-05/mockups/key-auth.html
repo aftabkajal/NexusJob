@@ -1,0 +1,157 @@
+<!--
+Illustrates:
+  DESIGN.md: Colors (primary, accent, surface, background, text-primary, text-secondary, border);
+    Typography (heading — page title; label — role-toggle options and field labels; body — inputs;
+    body-sm — helper/mode-switch text); Shapes (rounded.full — reserved for auth-role-toggle;
+    rounded.md — buttons/inputs); Components (auth-role-toggle — full spec, active/inactive states).
+  EXPERIENCE.md: Information Architecture (Sign up / Log in, role toggle surface); Component Patterns
+    (auth-role-toggle — exactly one role active, operable via Tab + arrow keys; sign-up mode shows a
+    required name field labeled "Company name" or "Full name" depending on active role; log-in mode
+    never shows the name field); Voice and Tone (formal registration/sign-in microcopy);
+    State Patterns (registration duplicate-email error, sign-in no-match error).
+  Two states shown: (a) Sign-up mode, Company role active, with the Company-name field; (b) Log-in
+  mode, Job Seeker role active, demonstrating the name field is absent regardless of role.
+-->
+<title>Sign Up / Log In — NexusJob</title>
+<style>
+  :root{
+    --bg:#F5F6FB; --surface:#FFFFFF; --primary:#23215E; --primary-fg:#FFFFFF;
+    --accent:#0A7A90; --accent-fg:#FFFFFF; --text:#1A1B2E; --text2:#5B5E78;
+    --border:#DFE1F0; --danger:#C42744; --danger-bg:#FBE4E8;
+    --r-sm:6px; --r-md:10px; --r-lg:16px; --r-full:9999px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; padding:40px; background:#D9DAE9;
+    font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+    color:var(--text);
+  }
+  .stage{ display:flex; gap:40px; flex-wrap:wrap; justify-content:center; }
+  .state-label{
+    font-size:12px; font-weight:600; letter-spacing:.04em; text-transform:uppercase;
+    color:#4B4D66; margin:0 0 10px 4px;
+  }
+  .browser-frame{
+    width:520px; max-width:100%; border-radius:12px; overflow:hidden;
+    border:1px solid #C7C9DC; box-shadow:0 12px 28px rgba(26,27,46,.14); background:#fff;
+  }
+  .browser-bar{
+    background:#E4E5F0; padding:10px 14px; display:flex; align-items:center; gap:8px;
+    border-bottom:1px solid var(--border);
+  }
+  .dot{width:11px;height:11px;border-radius:50%;}
+  .dot.r{background:#E5646B;} .dot.y{background:#E8B24B;} .dot.g{background:#59B36B;}
+  .url-pill{
+    margin-left:10px; background:#fff; border:1px solid var(--border); border-radius:999px;
+    padding:5px 16px; font-size:12px; color:var(--text2); flex:1;
+  }
+  .browser-content{ background:var(--bg); }
+
+  .app-nav{ background:var(--primary); color:#fff; padding:16px 40px; }
+  .wordmark{ font-weight:700; font-size:19px; letter-spacing:-0.01em; color:#fff; }
+
+  .panel{ padding:48px 40px 56px; }
+  .card{
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg);
+    padding:32px;
+  }
+  .card h1{ font-size:28px; font-weight:700; line-height:1.2; letter-spacing:-0.01em; margin:0 0 24px; }
+
+  .role-toggle{
+    display:inline-flex; background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--r-full); padding:4px; margin-bottom:28px; width:100%;
+  }
+  .role-toggle button{
+    flex:1; border:none; background:transparent; padding:9px 20px; border-radius:var(--r-full);
+    font-size:13px; font-weight:600; letter-spacing:.04em; color:var(--text2); cursor:default;
+  }
+  .role-toggle button.active{ background:var(--primary); color:#fff; }
+
+  .field{ margin-bottom:18px; }
+  label{ display:block; font-size:13px; font-weight:600; letter-spacing:.04em; color:var(--text); margin-bottom:6px; }
+  input{
+    width:100%; padding:11px 14px; border:1px solid var(--border); border-radius:var(--r-sm);
+    font-size:16px; font-family:inherit; color:var(--text); background:var(--surface);
+  }
+  .error-text{ font-size:12px; font-weight:500; color:var(--danger); margin:6px 0 0; }
+  .field.has-error input{ border-color:var(--danger); }
+
+  .submit-btn{
+    width:100%; background:var(--accent); color:var(--accent-fg); border:none; border-radius:var(--r-md);
+    padding:13px 20px; font-size:13px; font-weight:600; letter-spacing:.04em; cursor:default; margin-top:6px;
+  }
+  .mode-switch{ text-align:center; font-size:14px; color:var(--text2); margin-top:20px; }
+  .mode-switch a{ color:var(--accent); text-decoration:none; }
+</style>
+
+<div class="stage">
+  <div>
+    <p class="state-label">State A — Sign-up mode, Company active</p>
+    <div class="browser-frame">
+      <div class="browser-bar">
+        <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+        <span class="url-pill">nexusjob.app/signup</span>
+      </div>
+      <div class="browser-content">
+        <div class="app-nav"><span class="wordmark">NexusJob</span></div>
+        <div class="panel">
+          <div class="card">
+            <h1>Create your account</h1>
+            <div class="role-toggle">
+              <button class="active">Company</button>
+              <button>Job Seeker</button>
+            </div>
+            <div class="field">
+              <label for="cn">Company name</label>
+              <input id="cn" type="text" placeholder="Cobalt Ledger Technologies">
+            </div>
+            <div class="field has-error">
+              <label for="em1">Email</label>
+              <input id="em1" type="email" value="hiring@cobaltledger.com">
+              <p class="error-text">This email is already registered as a Company.</p>
+            </div>
+            <div class="field">
+              <label for="pw1">Password</label>
+              <input id="pw1" type="password" placeholder="••••••••">
+            </div>
+            <button class="submit-btn">Create account</button>
+            <p class="mode-switch">Already have an account? <a href="#">Log in</a></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <p class="state-label">State B — Log-in mode, Job Seeker active (no name field)</p>
+    <div class="browser-frame">
+      <div class="browser-bar">
+        <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+        <span class="url-pill">nexusjob.app/login</span>
+      </div>
+      <div class="browser-content">
+        <div class="app-nav"><span class="wordmark">NexusJob</span></div>
+        <div class="panel">
+          <div class="card">
+            <h1>Log in</h1>
+            <div class="role-toggle">
+              <button>Company</button>
+              <button class="active">Job Seeker</button>
+            </div>
+            <div class="field">
+              <label for="em2">Email</label>
+              <input id="em2" type="email" placeholder="you@example.com">
+            </div>
+            <div class="field">
+              <label for="pw2">Password</label>
+              <input id="pw2" type="password" placeholder="••••••••">
+            </div>
+            <p class="error-text" style="margin-bottom:14px;">That email and password don't match. Please try again.</p>
+            <button class="submit-btn">Log in</button>
+            <p class="mode-switch">New to NexusJob? <a href="#">Sign up</a></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
