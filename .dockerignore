@@ -1,0 +1,21 @@
+# Keep the build context small and deterministic.
+**/bin/
+**/obj/
+**/node_modules/
+**/dist/
+**/dist-ssr/
+**/wwwroot/
+**/*.user
+**/.vs/
+**/.idea/
+**/.git/
+.git/
+.github/
+_bmad/
+_bmad-output/
+.claude/
+**/.env
+**/.env.*
+**/*.tsbuildinfo
+**/.eslintcache
+README.md

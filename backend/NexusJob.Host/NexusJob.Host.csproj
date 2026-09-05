@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!--
+    Composition root and same-origin server (AD-10, AD-12, AD-22). The ONLY
+    project that references a module implementation. Serves the built SPA as
+    static files plus /api/* and /health from one origin. No CORS anywhere.
+  -->
+  <PropertyGroup>
+    <RootNamespace>NexusJob.Host</RootNamespace>
+    <UserSecretsId>nexusjob-host</UserSecretsId>
+    <!-- The SPA build is copied into wwwroot by the Dockerfile; never committed. -->
+    <StaticWebAssetsEnabled>false</StaticWebAssetsEnabled>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Npgsql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NexusJob.Modules.Identity\NexusJob.Modules.Identity.csproj" />
+    <ProjectReference Include="..\NexusJob.Modules.JobPostings\NexusJob.Modules.JobPostings.csproj" />
+    <ProjectReference Include="..\NexusJob.Modules.Applications\NexusJob.Modules.Applications.csproj" />
+  </ItemGroup>
+
+</Project>

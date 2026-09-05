@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Identity bounded-context module. Story 1.1: wiring-only stub (no features,
+    no persistence, no auth). May reference other modules' *.Contracts only
+    (AD-1); the Host is the only project allowed to reference this one (AD-10).
+  -->
+  <PropertyGroup>
+    <RootNamespace>NexusJob.Modules.Identity</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NexusJob.Modules.Identity.Contracts\NexusJob.Modules.Identity.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

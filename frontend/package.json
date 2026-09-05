@@ -1,0 +1,34 @@
+{
+  "name": "nexusjob-frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "test:fsd-gate": "node scripts/check-fsd-gate.mjs",
+    "preview": "vite preview"
+  },
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "dependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.0",
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^6.1.0",
+    "eslint": "^9.39.0",
+    "eslint-import-resolver-typescript": "^4.4.5",
+    "eslint-plugin-boundaries": "^7.2.0",
+    "globals": "^17.0.0",
+    "typescript": "~6.0.0",
+    "typescript-eslint": "^8.46.0",
+    "vite": "^8.2.0"
+  }
+}

@@ -1,0 +1,44 @@
+# Local stack (AR-14): one app container serving API + SPA, one PostgreSQL 18.
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      # Config from environment only (AD-22). Nothing secret is committed;
+      # these are local-development defaults. Timeout/Command Timeout keep the
+      # /health probe fast if Postgres is up but stalled.
+      ConnectionStrings__Postgres: "Host=postgres;Port=5432;Database=nexusjob;Username=nexusjob;Password=nexusjob_local_dev;Timeout=3;Command Timeout=3"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      # /health is the operability deliverable (AD-22); curl is installed in the image.
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: nexusjob
+      POSTGRES_USER: nexusjob
+      POSTGRES_PASSWORD: nexusjob_local_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      # postgres:18+ expects a single mount at /var/lib/postgresql (data lands in
+      # a version-specific subdirectory). Mounting .../data directly is rejected.
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nexusjob -d nexusjob"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres-data:

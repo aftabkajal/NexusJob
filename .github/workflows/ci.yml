@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+# Every gate runs here; any step that fails, fails the run (AR-13).
+# No container-registry push and no deploy step (no hosting platform chosen).
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend build + architecture tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Build
+        run: dotnet build backend/NexusJob.sln --configuration Release
+
+      - name: Test (SM-2 boundary gate + Host /health)
+        run: dotnet test backend/NexusJob.sln --configuration Release --no-build --verbosity normal
+
+  frontend:
+    name: Frontend lint + build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: frontend/.nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Lint (FSD boundary gate)
+        run: npm run lint
+
+      - name: FSD boundary gate (negative test)
+        run: npm run test:fsd-gate
+
+      - name: Build
+        run: npm run build
+
+  image:
+    name: Container image build + smoke test
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image (no push, no deploy)
+        run: docker compose build
+
+      - name: Smoke test (/health + same-origin serve)
+        run: |
+          set -euo pipefail
+          docker compose up -d
+          ok=0
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /tmp/health.json -w '%{http_code}' http://localhost:8080/health || true)
+            if [ "$code" = "200" ] && grep -q '"database":"ok"' /tmp/health.json; then ok=1; break; fi
+            sleep 5
+          done
+          root=$(curl -s -o /tmp/root.html -w '%{http_code}' http://localhost:8080/ || true)
+          echo "health=$code root=$root"
+          docker compose logs --no-color app || true
+          docker compose down -v
+          if [ "$ok" != "1" ]; then echo "::error::/health never returned 200 {\"database\":\"ok\"}"; exit 1; fi
+          if [ "$root" != "200" ]; then echo "::error::SPA index.html not served from the app origin"; exit 1; fi

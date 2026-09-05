@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Identity's only public surface. Empty for story 1.1: the DTO/interface
+    surface is designed in later stories. References NO implementation project
+    (AD-1) - the architecture tests enforce this.
+  -->
+  <PropertyGroup>
+    <RootNamespace>NexusJob.Modules.Identity.Contracts</RootNamespace>
+  </PropertyGroup>
+
+</Project>

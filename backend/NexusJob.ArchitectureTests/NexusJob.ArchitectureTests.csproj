@@ -1,0 +1,61 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The SM-2 boundary gate. Runs under `dotnet test` and fails the build on any
+    AD-2 violation.
+
+    NO ProjectReference to any module (see Design Notes in the spec): a
+    compile-time reference would make this project itself violate AD-2 rule 3.
+    Module + Host assemblies are loaded from their build-output paths at runtime
+    via Assembly.LoadFrom.
+
+    `dotnet test` only builds this project and its reference graph - which does
+    not include the modules. The EnsureBoundaryTargetsBuilt target below rebuilds
+    the Host (and transitively every module + Contracts project) first, so the
+    scan always runs against current assemblies. It is an MSBuild invocation, not
+    a project reference: no assembly reference is added and the test project stays
+    off the "references an implementation" list.
+
+    The FrameworkReference lets Mono.Cecil (inside ArchUnitNET) resolve the
+    ASP.NET Core types the module stubs touch; it references no module.
+  -->
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="TngTech.ArchUnitNET" />
+    <PackageReference Include="TngTech.ArchUnitNET.xUnit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      Not compiled against and not referenced at runtime: this only forces the
+      Host + module projects to build before the boundary scan runs. Kept in one
+      place so the target below stays in sync with the solution.
+    -->
+    <BoundaryScanProject Include="..\NexusJob.Host\NexusJob.Host.csproj" />
+    <BoundaryScanProject Include="..\NexusJob.Modules.Identity\NexusJob.Modules.Identity.csproj" />
+    <BoundaryScanProject Include="..\NexusJob.Modules.JobPostings\NexusJob.Modules.JobPostings.csproj" />
+    <BoundaryScanProject Include="..\NexusJob.Modules.Applications\NexusJob.Modules.Applications.csproj" />
+  </ItemGroup>
+
+  <Target Name="EnsureBoundaryTargetsBuilt" BeforeTargets="Build">
+    <MSBuild Projects="@(BoundaryScanProject)"
+             Targets="Build"
+             Properties="Configuration=$(Configuration)"
+             BuildInParallel="true" />
+  </Target>
+
+</Project>

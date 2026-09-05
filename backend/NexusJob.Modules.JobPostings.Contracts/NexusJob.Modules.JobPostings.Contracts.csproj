@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    JobPostings' only public surface. Empty for story 1.1. References NO
+    implementation project (AD-1).
+  -->
+  <PropertyGroup>
+    <RootNamespace>NexusJob.Modules.JobPostings.Contracts</RootNamespace>
+  </PropertyGroup>
+
+</Project>

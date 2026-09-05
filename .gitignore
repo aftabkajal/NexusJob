@@ -1,0 +1,27 @@
+# Build output
+**/bin/
+**/obj/
+**/dist/
+**/dist-ssr/
+
+# The SPA build is copied into the Host's wwwroot at image-build time; never committed.
+backend/NexusJob.Host/wwwroot/
+
+# Node
+**/node_modules/
+*.tsbuildinfo
+.eslintcache
+
+# Secrets & local config - nothing secret is committed
+.env
+.env.*
+!.env.example
+*.user
+*.suo
+appsettings.*.local.json
+
+# IDE / OS
+.vs/
+.idea/
+.DS_Store
+*.swp
