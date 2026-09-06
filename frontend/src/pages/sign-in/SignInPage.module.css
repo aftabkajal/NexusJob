@@ -1,0 +1,5 @@
+.screen {
+  display: flex;
+  justify-content: center;
+  padding-top: var(--space-6);
+}

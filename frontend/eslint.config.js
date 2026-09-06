@@ -79,6 +79,29 @@ export default tseslint.config(
           ],
         },
       ],
+      // AD-16: the NSwag-generated client (`shared/api`) is a client-side API
+      // description, not a general primitive. It may be resolved only from an
+      // `entities/*/api` or `features/*/api` segment (cleared in the override
+      // below); every other importer fails here.
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['**/shared/api', '**/shared/api/*', 'shared/api', 'shared/api/*'],
+              message:
+                'Import the generated API client only from an entities/*/api or features/*/api segment (AD-16).',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    // The AD-16 exception: API segments own the generated client.
+    files: ['src/entities/*/api/**', 'src/features/*/api/**'],
+    rules: {
+      'no-restricted-imports': 'off',
     },
   },
 )
