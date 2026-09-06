@@ -7,6 +7,11 @@
 # The SPA build is copied into the Host's wwwroot at image-build time; never committed.
 backend/NexusJob.Host/wwwroot/
 
+# Build-time OpenAPI document (spec 1.3b-i): regenerated on every Host build and
+# consumed by NSwag. Only the generated TypeScript client is committed; CI
+# regenerates this file and fails on client drift.
+backend/NexusJob.Host/openapi/
+
 # Node
 **/node_modules/
 *.tsbuildinfo

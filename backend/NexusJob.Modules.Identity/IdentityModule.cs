@@ -74,7 +74,12 @@ public static class IdentityModule
 
         var group = endpoints.MapGroup("/api/auth");
 
+        // Operation ids drive the generated TypeScript client (AD-15): the
+        // "Auth_*" prefix makes NSwag emit one `AuthClient` with `register` /
+        // `login` / `me` / `logout` / `csrf` methods. Endpoint behaviour is
+        // unchanged - these only shape the document.
         group.MapPost("/register", RegisterEndpoint.Handle)
+            .WithName("Auth_Register")
             .AllowAnonymous()
             .AddEndpointFilter<AntiforgeryEndpointFilter>()
             .AddEndpointFilter(new DataAnnotationsValidationFilter<RegisterRequest>())
@@ -84,6 +89,7 @@ public static class IdentityModule
             .ProducesProblem(StatusCodes.Status409Conflict);
 
         group.MapPost("/login", LoginEndpoint.Handle)
+            .WithName("Auth_Login")
             .AllowAnonymous()
             .AddEndpointFilter<AntiforgeryEndpointFilter>()
             .AddEndpointFilter(new DataAnnotationsValidationFilter<LoginRequest>())
@@ -93,11 +99,13 @@ public static class IdentityModule
             .ProducesProblem(StatusCodes.Status401Unauthorized);
 
         group.MapGet("/me", GetMeEndpoint.Handle)
+            .WithName("Auth_Me")
             .RequireAuthorization()
             .Produces<AuthAccountResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status401Unauthorized);
 
         group.MapPost("/logout", LogoutEndpoint.Handle)
+            .WithName("Auth_Logout")
             .RequireAuthorization()
             .AddEndpointFilter<AntiforgeryEndpointFilter>()
             .Produces(StatusCodes.Status204NoContent)
@@ -105,6 +113,7 @@ public static class IdentityModule
             .ProducesProblem(StatusCodes.Status401Unauthorized);
 
         group.MapGet("/csrf", GetCsrfTokenEndpoint.Handle)
+            .WithName("Auth_Csrf")
             .AllowAnonymous()
             .Produces<CsrfTokenResponse>(StatusCodes.Status200OK);
 

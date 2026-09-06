@@ -1,0 +1,5 @@
+# `npm run generate:api` (NSwag, newLineBehavior: LF) always writes the generated
+# API client with LF line endings, on every platform. Pin LF in the index too so
+# a Windows checkout (core.autocrlf=true) does not report the whole file as drift
+# the moment the client is regenerated locally. The CI drift gate runs on Linux.
+src/shared/api/** text eol=lf

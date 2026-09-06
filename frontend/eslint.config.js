@@ -31,7 +31,11 @@ const downwardPolicies = FSD_LAYERS.flatMap((layer, index) => {
 
 export default tseslint.config(
   {
-    ignores: ['dist/**', 'node_modules/**'],
+    // Only the NSwag-generated client file is un-linted (it carries its own
+    // eslint-disable); `tsc` still type-checks it and CI's drift gate is its
+    // source of truth. The hand-written `src/shared/api/index.ts` barrel stays
+    // linted and inside the FSD boundary rules.
+    ignores: ['dist/**', 'node_modules/**', 'src/shared/api/nexus-api-client.ts'],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,

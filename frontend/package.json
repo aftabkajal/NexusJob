@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "lint:tokens": "stylelint \"src/**/*.css\"",
     "test": "vitest",
+    "generate:api": "nswag run nswag.json",
     "test:fsd-gate": "node scripts/check-fsd-gate.mjs",
     "test:tokens-gate": "node scripts/check-tokens-gate.mjs",
     "preview": "vite preview"
@@ -36,6 +37,7 @@
     "eslint-plugin-boundaries": "^7.2.0",
     "globals": "^17.0.0",
     "jsdom": "^30.0.1",
+    "nswag": "14.7.1",
     "stylelint": "^17.15.0",
     "stylelint-config-standard": "^40.0.0",
     "typescript": "~6.0.0",

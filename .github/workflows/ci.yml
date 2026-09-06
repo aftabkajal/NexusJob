@@ -83,6 +83,61 @@ jobs:
             exit 1
           fi
 
+  openapi-client:
+    name: OpenAPI 3.0 doc + NSwag client drift gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: frontend/.nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      # Build-time OpenAPI emission (Microsoft.Extensions.ApiDescription.Server)
+      # writes backend/NexusJob.Host/openapi/NexusJob.Host.json - the untracked
+      # input NSwag reads. Only the generated TS client is committed.
+      - name: Build Host (emits the OpenAPI 3.0 document)
+        run: dotnet build backend/NexusJob.Host/NexusJob.Host.csproj --configuration Release
+
+      - name: Assert the emitted document is OpenAPI 3.0
+        run: |
+          doc=backend/NexusJob.Host/openapi/NexusJob.Host.json
+          if [ ! -f "$doc" ]; then
+            echo "::error::$doc was not emitted by the Host build."
+            exit 1
+          fi
+          version=$(jq -r '.openapi // empty' "$doc")
+          case "$version" in
+            3.0.*) echo "OpenAPI document version: $version" ;;
+            *) echo "::error::$doc has openapi '$version'; expected 3.0.* (NSwag's TS generator is unreliable on 3.1)."; exit 1 ;;
+          esac
+
+      - name: Install frontend deps
+        working-directory: frontend
+        run: npm ci
+
+      - name: Regenerate the TypeScript API client
+        working-directory: frontend
+        run: npm run generate:api
+
+      - name: Fail on client drift
+        working-directory: frontend
+        run: |
+          git add -N -- src/shared/api
+          if ! git diff --exit-code -- src/shared/api; then
+            echo "::error::The committed frontend/src/shared/api client is stale. Run 'npm run generate:api' (after a Host build) and commit the result."
+            exit 1
+          fi
+
   image:
     name: Container image build + smoke test
     runs-on: ubuntu-latest

@@ -1,0 +1,58 @@
+{
+  "runtime": "Net100",
+  "defaultVariables": null,
+  "documentGenerator": {
+    "fromDocument": {
+      "json": "../backend/NexusJob.Host/openapi/NexusJob.Host.json",
+      "output": null
+    }
+  },
+  "codeGenerators": {
+    "openApiToTypeScriptClient": {
+      "className": "{controller}Client",
+      "moduleName": "",
+      "namespace": "",
+      "typeScriptVersion": 5.4,
+      "template": "Fetch",
+      "promiseType": "Promise",
+      "httpClass": "HttpClient",
+      "withCredentials": false,
+      "useSingletonProvider": false,
+      "generateClientClasses": true,
+      "generateClientInterfaces": false,
+      "generateOptionalParameters": false,
+      "exportTypes": true,
+      "wrapDtoExceptions": false,
+      "exceptionClass": "ApiException",
+      "clientBaseClass": null,
+      "wrapResponses": false,
+      "generateResponseClasses": true,
+      "responseClass": "SwaggerResponse",
+      "useTransformOptionsMethod": false,
+      "useTransformResultMethod": false,
+      "generateDtoTypes": true,
+      "operationGenerationMode": "MultipleClientsFromOperationId",
+      "markOptionalProperties": true,
+      "generateConstructorInterface": true,
+      "convertConstructorInterfaceData": false,
+      "typeStyle": "Interface",
+      "enumStyle": "StringLiteral",
+      "useLeafType": false,
+      "classTypes": [],
+      "extendedClasses": [],
+      "extensionCode": null,
+      "generateDefaultValues": true,
+      "excludedTypeNames": [],
+      "handleReferences": false,
+      "generateImmutableArrayProperties": false,
+      "generateImmutableDictionaryProperties": false,
+      "jsonConverters": null,
+      "inlineNamedDictionaries": false,
+      "inlineNamedAny": false,
+      "dateTimeType": "String",
+      "nullValue": "Undefined",
+      "output": "src/shared/api/nexus-api-client.ts",
+      "newLineBehavior": "LF"
+    }
+  }
+}

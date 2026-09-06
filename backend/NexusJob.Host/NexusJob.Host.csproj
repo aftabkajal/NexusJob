@@ -10,10 +10,33 @@
     <UserSecretsId>nexusjob-host</UserSecretsId>
     <!-- The SPA build is copied into wwwroot by the Dockerfile; never committed. -->
     <StaticWebAssetsEnabled>false</StaticWebAssetsEnabled>
+
+    <!--
+      Build-time OpenAPI document emission (spec 1.3b-i / AD-15).
+      Microsoft.Extensions.ApiDescription.Server runs the GetDocument tool on every
+      build and writes the same 3.0 document the runtime serves to
+      backend/NexusJob.Host/openapi/NexusJob.Host.json. That path is git-ignored -
+      only the NSwag-generated TypeScript client is committed, and CI regenerates
+      it and fails on drift.
+    -->
+    <OpenApiGenerateDocumentsOnBuild>true</OpenApiGenerateDocumentsOnBuild>
+    <OpenApiDocumentsDirectory>$(MSBuildProjectDirectory)/openapi</OpenApiDocumentsDirectory>
+    <!--
+      The .NET 10 GetDocument tool defaults to 3.1 output; pin it to 3.0 so the
+      build-time file matches the runtime endpoint (AddOpenApi is pinned the same
+      way in Program.cs). NSwag's TS generator is unreliable on 3.1 (AD-15).
+    -->
+    <OpenApiGenerateDocumentsOptions>--openapi-version OpenApi3_0</OpenApiGenerateDocumentsOptions>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Npgsql" />
+    <!-- OpenAPI 3.0 document (AD-15): AddOpenApi/MapOpenApi at runtime; the build-time file is written by the tool below. -->
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <PackageReference Include="Microsoft.Extensions.ApiDescription.Server">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <!-- Host-owned Data-Protection key store in the public schema (AD-22) + startup migration. -->
     <PackageReference Include="Microsoft.EntityFrameworkCore" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />

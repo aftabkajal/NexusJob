@@ -56,6 +56,16 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 // RFC 9457 ProblemDetails on every non-2xx (AD-15).
 builder.Services.AddProblemDetails();
 
+// One OpenAPI document (AD-15), pinned to 3.0 output. The .NET 10 generator
+// defaults to 3.1; NSwag's TypeScript client generator is unreliable on 3.1, so
+// both the served endpoint and the build-time file are forced to 3.0. The
+// build-time file is written by Microsoft.Extensions.ApiDescription.Server (see
+// the Host .csproj) and must stay byte-identical to what MapOpenApi serves.
+builder.Services.AddOpenApi("v1", options =>
+{
+    options.OpenApiVersion = Microsoft.OpenApi.OpenApiSpecVersion.OpenApi3_0;
+});
+
 // Built-in .NET 10 minimal-API validation (DataAnnotations). A request body that
 // fails validation is a 400 validation ProblemDetails naming the invalid fields.
 builder.Services.AddValidation();
@@ -197,6 +207,12 @@ app.MapGet("/health", async (CancellationToken requestAborted) =>
             statusCode: StatusCodes.Status503ServiceUnavailable);
     }
 });
+
+// The OpenAPI 3.0 document at /openapi/v1.json (AD-15): anonymous (explicitly,
+// not just by the absence of a fallback policy), same-origin, and mapped ahead
+// of the SPA fallback below so MapFallbackToFile never shadows it. JSON endpoint
+// only - no Swagger UI middleware.
+app.MapOpenApi().AllowAnonymous();
 
 // Module endpoints (AD-10). No-op stubs in story 1.1.
 app.MapIdentityModule();
