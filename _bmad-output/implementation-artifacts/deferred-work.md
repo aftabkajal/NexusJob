@@ -25,3 +25,11 @@ Append-only. Each entry is work identified but intentionally not done in the spe
 - source_spec: `spec-1-3a-identity-backend-and-auth-endpoints.md`
   summary: No rate limiting, request throttling, or account lockout on `POST /api/auth/login` (or `/register`). An automated brute-force / credential-stuffing run against the login endpoint is unthrottled.
   evidence: Raised by code-review pass 1 (blind-hunter) on 1.3a. Not required by the PRD, epics, or the architecture ADs for v1, and out of scope for 1.3a as written; the real fix is ASP.NET Core rate-limiting middleware (partitioned by IP and/or email), its configuration, and tests. Track as an auth-hardening follow-up before or alongside a public deployment.
+
+- source_spec: `spec-1-3b-ii-frontend-sign-in-surface.md`
+  summary: `frontend/src/entities/session/model/sessionQuery.ts` `fetchSession` unconditionally returns `{ kind: 'company', … }` from `GET /api/auth/me` without checking `account.accountType`. A non-Company account would be silently rendered as a Company.
+  evidence: Raised by code-review pass 1 (blind-hunter, edge-case-hunter) on 1.3b-ii. Not reachable today — the `/api/auth/me` endpoint only ever returns a Company account before story 1.4 — so there is no bad outcome yet. Story 1.4 adds the Job Seeker account space and must widen `Viewer` / `SessionViewer` and branch `fetchSession` on `accountType` (return the Job Seeker viewer, or `null`/error for an unexpected type) at that point.
+
+- source_spec: `spec-1-3b-ii-frontend-sign-in-surface.md`
+  summary: A non-`401` failure of `GET /api/auth/me` on load (5xx, network error, 403) leaves a signed-in user on the anonymous shell with no automatic recovery — `useSession` has `retry: false` and `staleTime: Infinity`, so nothing refetches until the key is invalidated or the page is reloaded.
+  evidence: Raised by code-review pass 1 (blind-hunter, edge-case-hunter) on 1.3b-ii. The spec deliberately scoped `me` handling to the expected `401` (signed-out) path and chose `retry: false` because a `401` is not transient; a `me` 500 is rare (trivial DB read) and a reload re-runs the query. A robustness follow-up: a bounded retry for non-`401` `me` failures, or an explicit "couldn't load your session" state in `AppShell` instead of silently falling back to the anonymous chrome.

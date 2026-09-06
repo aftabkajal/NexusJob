@@ -28,3 +28,8 @@
   background-color: var(--color-primary);
   color: var(--color-primary-foreground);
 }
+
+.option-disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}

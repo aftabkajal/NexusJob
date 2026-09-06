@@ -1,9 +1,12 @@
 import '@fontsource-variable/inter'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { createBrowserRouter, RouterProvider, type RouteObject } from 'react-router'
 
-import { HomePage, NotFoundPage } from '../pages'
+import { HomePage, NotFoundPage, SignInPage } from '../pages'
 import { Container } from '../shared/ui'
 import { AppShell } from '../widgets'
+
+import { queryClient } from './queryClient'
 
 import '../shared/tokens/tokens.css'
 import '../shared/tokens/base.css'
@@ -21,21 +24,24 @@ export function RouteError() {
 }
 
 /**
- * Router shape (story 1.2): one layout route (`AppShell`) owns the chrome; child
- * routes render into its `<Outlet/>`. `/` → `HomePage`; anything else →
- * `NotFoundPage`, still inside the shell. The Host serves `index.html` for every
- * non-`/api` path (story 1.1), so these client paths resolve on a hard refresh.
+ * Router shape: one layout route (`AppShell`) owns the chrome; child routes
+ * render into its `<Outlet/>`. `/` → `HomePage`; `/sign-in` → `SignInPage`;
+ * anything else → `NotFoundPage`, still inside the shell. The Host serves
+ * `index.html` for every non-`/api` path (story 1.1), so these client paths
+ * resolve on a hard refresh.
  *
- * `viewer` is fixed to the signed-out state here; story 1.3 supplies a role.
- * Exported so a test can mount the same tree with an in-memory router.
+ * `AppShell` takes no `viewer` prop here — it derives the viewer from
+ * `useSession()` (`GET /api/auth/me`). Exported so a test can mount the same
+ * tree with an in-memory router.
  */
 export const routes: RouteObject[] = [
   {
     path: '/',
-    element: <AppShell viewer={{ kind: 'anonymous' }} />,
+    element: <AppShell />,
     errorElement: <RouteError />,
     children: [
       { index: true, element: <HomePage /> },
+      { path: 'sign-in', element: <SignInPage /> },
       { path: '*', element: <NotFoundPage /> },
     ],
   },
@@ -44,5 +50,9 @@ export const routes: RouteObject[] = [
 const router = createBrowserRouter(routes)
 
 export function App() {
-  return <RouterProvider router={router} />
+  return (
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={router} />
+    </QueryClientProvider>
+  )
 }

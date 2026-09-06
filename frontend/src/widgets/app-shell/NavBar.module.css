@@ -43,8 +43,38 @@
   opacity: 1;
 }
 
+.account {
+  color: var(--color-primary-foreground);
+  font-family: var(--font-family);
+  font-size: var(--text-label-size);
+  font-weight: var(--text-label-weight);
+  line-height: var(--text-label-line);
+  letter-spacing: var(--text-label-tracking);
+  opacity: 0.85;
+}
+
+.logout {
+  padding: 0;
+  color: var(--color-primary-foreground);
+  background: none;
+  border: 0;
+  font-family: var(--font-family);
+  font-size: var(--text-label-size);
+  font-weight: var(--text-label-weight);
+  line-height: var(--text-label-line);
+  letter-spacing: var(--text-label-tracking);
+  opacity: 0.85;
+  cursor: pointer;
+  transition: opacity 120ms ease;
+}
+
+.logout:hover {
+  opacity: 1;
+}
+
 /* The bar is painted with `primary`; keep the focus ring visible against it. */
 .link:focus-visible,
+.logout:focus-visible,
 .wordmark:focus-visible {
   outline-color: var(--color-primary-foreground);
 }

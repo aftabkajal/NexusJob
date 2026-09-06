@@ -64,6 +64,9 @@ jobs:
       - name: FSD boundary gate (negative test)
         run: npm run test:fsd-gate
 
+      - name: API client import gate (negative test)
+        run: npm run test:api-import-gate
+
       - name: Lint (design-token gate)
         run: npm run lint:tokens
 

@@ -71,4 +71,44 @@ describe('RoleToggle', () => {
     expect(screen.getByRole('radio', { name: 'Company' })).toBeChecked()
     expect(screen.getByRole('radio', { name: 'Job Seeker' })).not.toBeChecked()
   })
+
+  describe('disabledValues', () => {
+    it('marks a disabled option with aria-disabled and never a tab stop', () => {
+      render(<RoleToggle defaultValue="company" disabledValues={['jobSeeker']} />)
+
+      const jobSeeker = screen.getByRole('radio', { name: 'Job Seeker' })
+      expect(jobSeeker).toHaveAttribute('aria-disabled', 'true')
+      expect(jobSeeker).toHaveAttribute('tabindex', '-1')
+    })
+
+    it('does not select a disabled option on click', async () => {
+      const user = userEvent.setup()
+      const onChange = vi.fn()
+      render(
+        <RoleToggle defaultValue="company" disabledValues={['jobSeeker']} onChange={onChange} />,
+      )
+
+      await user.click(screen.getByRole('radio', { name: 'Job Seeker' }))
+
+      expect(screen.getByRole('radio', { name: 'Company' })).toBeChecked()
+      expect(screen.getByRole('radio', { name: 'Job Seeker' })).not.toBeChecked()
+      expect(onChange).not.toHaveBeenCalled()
+    })
+
+    it('skips a disabled option during arrow-key navigation', async () => {
+      const user = userEvent.setup()
+      const onChange = vi.fn()
+      render(
+        <RoleToggle defaultValue="company" disabledValues={['jobSeeker']} onChange={onChange} />,
+      )
+      const company = screen.getByRole('radio', { name: 'Company' })
+      company.focus()
+
+      await user.keyboard('{ArrowRight}')
+
+      expect(company).toBeChecked()
+      expect(screen.getByRole('radio', { name: 'Job Seeker' })).not.toBeChecked()
+      expect(onChange).not.toHaveBeenCalled()
+    })
+  })
 })
