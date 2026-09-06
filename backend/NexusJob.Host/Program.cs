@@ -59,13 +59,21 @@ builder.Services.AddApplicationsModule(builder.Configuration);
 
 var app = builder.Build();
 
-// Fail loudly (once, at startup) when the DB is not configured, so an
-// unconfigured deployment is not indistinguishable from a database outage.
+// Fail loudly (once, at startup) when the DB is not configured or its connection
+// string cannot be parsed, so an unconfigured / misconfigured deployment is not
+// indistinguishable from a database outage. Neither case takes the Host down -
+// GET /health reports "unhealthy" until it is fixed.
 if (string.IsNullOrWhiteSpace(rawPostgresConnectionString))
 {
     app.Logger.LogError(
         "ConnectionStrings:Postgres is not configured. GET /health will report "
         + "\"unhealthy\" until the ConnectionStrings__Postgres environment variable is set.");
+}
+else if (healthProbeConnectionString is null)
+{
+    app.Logger.LogError(
+        "ConnectionStrings:Postgres is set but could not be parsed. GET /health will "
+        + "report \"unhealthy\" until the ConnectionStrings__Postgres value is corrected.");
 }
 
 app.UseHttpLogging();
@@ -114,6 +122,12 @@ app.MapIdentityModule();
 app.MapJobPostingsModule();
 app.MapApplicationsModule();
 
+// An unknown /api/* route is a 404, never the SPA shell - a client expecting
+// JSON must not get index.html with a 200. This fallback is more specific than
+// the catch-all below, so a matched API endpoint still wins and any other
+// unmatched /api path lands here.
+app.MapFallback("/api/{**rest}", () => Results.NotFound());
+
 // Any non-API, non-file route returns the SPA shell from the same origin.
 // Registered after the API routes so it never shadows them.
 app.MapFallbackToFile("index.html");
@@ -135,7 +149,9 @@ internal static class HealthProbe
     /// <summary>
     /// Returns <paramref name="connectionString"/> with short connect and command
     /// timeouts forced on, so the probe fails fast instead of blocking ~15-30s on
-    /// a stalled server. Returns <c>null</c> when nothing is configured.
+    /// a stalled server. Returns <c>null</c> when nothing is configured, or when
+    /// the value is present but not a parseable Npgsql connection string - a
+    /// syntactically invalid value must not crash the Host at startup.
     /// </summary>
     internal static string? BuildProbeConnectionString(string? connectionString)
     {
@@ -144,11 +160,18 @@ internal static class HealthProbe
             return null;
         }
 
-        return new NpgsqlConnectionStringBuilder(connectionString)
+        try
         {
-            Timeout = ConnectTimeoutSeconds,
-            CommandTimeout = CommandTimeoutSeconds,
-        }.ConnectionString;
+            return new NpgsqlConnectionStringBuilder(connectionString)
+            {
+                Timeout = ConnectTimeoutSeconds,
+                CommandTimeout = CommandTimeoutSeconds,
+            }.ConnectionString;
+        }
+        catch (Exception e) when (e is ArgumentException or FormatException)
+        {
+            return null;
+        }
     }
 }
 

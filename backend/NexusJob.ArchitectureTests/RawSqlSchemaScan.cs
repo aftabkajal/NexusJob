@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.RegularExpressions;
 using Xunit;
 
@@ -7,11 +8,13 @@ namespace NexusJob.ArchitectureTests;
 /// AD-2 rule 4 (best-effort backstop for AD-5): a raw-SQL call
 /// (<c>FromSql</c> / <c>FromSqlRaw</c> / <c>FromSqlInterpolated</c> /
 /// <c>ExecuteSqlRaw</c> / <c>ExecuteSqlInterpolated</c> / <c>ExecuteSql</c> /
-/// <c>SqlQueryRaw</c>, each with or without an <c>Async</c> suffix) whose literal
-/// SQL names a schema other than the caller module's own schema fails the build.
-/// Comments are stripped before matching, so a commented-out call does not break
-/// the build. Today the tree has no raw SQL, so the source scan passes vacuously;
-/// the fixture tests prove the detector still catches the known-bad path.
+/// <c>SqlQueryRaw</c> / <c>SqlQuery</c>, each with or without an <c>Async</c>
+/// suffix) whose literal SQL names a schema other than the caller module's own
+/// schema fails the build. Comments are stripped before matching - respecting
+/// string literals, so a <c>//</c> or <c>/*</c> inside SQL text is not mistaken
+/// for a comment - so a commented-out call does not break the build. Today the
+/// tree has no raw SQL, so the source scan passes vacuously; the fixture tests
+/// prove the detector still catches the known-bad path.
 /// </summary>
 public sealed class RawSqlSchemaScan
 {
@@ -35,16 +38,12 @@ public sealed class RawSqlSchemaScan
         };
 
     private static readonly Regex RawSqlCall = new(
-        @"\b(?<call>(?:FromSqlInterpolated|FromSqlRaw|FromSql|ExecuteSqlInterpolated|ExecuteSqlRaw|ExecuteSql|SqlQueryRaw)(?:Async)?)\s*(?:<[^>]*>)?\s*\(",
+        @"\b(?<call>(?:FromSqlInterpolated|FromSqlRaw|FromSql|ExecuteSqlInterpolated|ExecuteSqlRaw|ExecuteSql|SqlQueryRaw|SqlQuery)(?:Async)?)\s*(?:<[^>]*>)?\s*\(",
         RegexOptions.Compiled);
 
     private static readonly Regex StringLiteral = new(
         "\"(?<body>(?:[^\"\\\\]|\\\\.)*)\"",
         RegexOptions.Compiled);
-
-    private static readonly Regex BlockComment = new(@"/\*.*?\*/", RegexOptions.Compiled | RegexOptions.Singleline);
-
-    private static readonly Regex LineComment = new(@"//[^\r\n]*", RegexOptions.Compiled);
 
     private static readonly Regex SchemaQualifiedName = new(
         @"\b(?<schema>[A-Za-z_][A-Za-z0-9_]*)\.(?<object>[A-Za-z_][A-Za-z0-9_]*)",
@@ -112,6 +111,31 @@ public sealed class RawSqlSchemaScan
         Assert.True(ContainsCrossSchemaRawSql(
             "var rows = db.Set<Foo>().FromSqlInterpolatedAsync($\"SELECT * FROM public.data_protection_keys\");",
             ownSchema, out _));
+
+        // EF Core's interpolated Database.SqlQuery (no "Raw" suffix).
+        Assert.True(ContainsCrossSchemaRawSql(
+            "var ids = db.Database.SqlQuery<int>($\"SELECT id FROM job_postings.job_posting WHERE id = {id}\");",
+            ownSchema, out var q));
+        Assert.Contains("job_postings", q, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Detector_still_flags_a_cross_schema_name_after_an_inline_sql_comment_marker()
+    {
+        const string ownSchema = "identity";
+
+        // A "//" inside the SQL string (here, a URL) must not be treated as the
+        // start of a C# line comment and swallow the rest of the literal.
+        Assert.True(ContainsCrossSchemaRawSql(
+            "db.Database.ExecuteSqlRaw(\"UPDATE identity.foo SET url = 'http://x' FROM job_postings.bar\");",
+            ownSchema, out var a));
+        Assert.Contains("job_postings", a, StringComparison.Ordinal);
+
+        // Likewise a "/* ... */" inside the SQL string (an inline SQL comment).
+        Assert.True(ContainsCrossSchemaRawSql(
+            "db.Database.ExecuteSqlRaw(\"UPDATE identity.foo /* n/a */ SET x = 1 FROM job_postings.bar\");",
+            ownSchema, out var b));
+        Assert.Contains("job_postings", b, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -153,9 +177,11 @@ public sealed class RawSqlSchemaScan
     {
         offending = string.Empty;
 
-        // Strip block comments first (so a "//" inside one is already gone), then
-        // line comments, so a commented-out call is not treated as real code.
-        source = LineComment.Replace(BlockComment.Replace(source, " "), " ");
+        // Strip line and block comments so a commented-out call is not treated as
+        // real code - but skip over string literals verbatim, so a "//" or "/*"
+        // inside SQL text (e.g. a URL, or an inline SQL comment) is never mistaken
+        // for the start of a C# comment and does not truncate the literal.
+        source = StripCommentsPreservingStringLiterals(source);
 
         foreach (Match call in RawSqlCall.Matches(source))
         {
@@ -184,6 +210,102 @@ public sealed class RawSqlSchemaScan
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// Returns <paramref name="source"/> with <c>//</c> line comments and
+    /// <c>/* */</c> block comments blanked, while copying C# string literals
+    /// (including <c>$"</c>, <c>@"</c> and <c>$@"</c> / <c>@$"</c> forms) through
+    /// verbatim so comment markers inside SQL text are left intact.
+    /// </summary>
+    internal static string StripCommentsPreservingStringLiterals(string source)
+    {
+        var result = new StringBuilder(source.Length);
+
+        for (var i = 0; i < source.Length; i++)
+        {
+            var c = source[i];
+
+            if (c == '"')
+            {
+                var verbatim = (i >= 1 && source[i - 1] == '@')
+                    || (i >= 2 && source[i - 1] == '$' && source[i - 2] == '@')
+                    || (i >= 2 && source[i - 1] == '@' && source[i - 2] == '$');
+
+                result.Append(c);
+                i++;
+                while (i < source.Length)
+                {
+                    var d = source[i];
+                    if (verbatim)
+                    {
+                        if (d == '"')
+                        {
+                            if (i + 1 < source.Length && source[i + 1] == '"')
+                            {
+                                result.Append("\"\"");
+                                i += 2;
+                                continue;
+                            }
+
+                            result.Append('"');
+                            break;
+                        }
+
+                        result.Append(d);
+                    }
+                    else
+                    {
+                        if (d == '\\' && i + 1 < source.Length)
+                        {
+                            result.Append(d).Append(source[i + 1]);
+                            i += 2;
+                            continue;
+                        }
+
+                        result.Append(d);
+                        if (d == '"')
+                        {
+                            break;
+                        }
+                    }
+
+                    i++;
+                }
+
+                continue;
+            }
+
+            if (c == '/' && i + 1 < source.Length && source[i + 1] == '/')
+            {
+                i += 2;
+                while (i < source.Length && source[i] != '\n' && source[i] != '\r')
+                {
+                    i++;
+                }
+
+                i--; // let the loop's i++ land on the newline (or end)
+                result.Append(' ');
+                continue;
+            }
+
+            if (c == '/' && i + 1 < source.Length && source[i + 1] == '*')
+            {
+                i += 2;
+                while (i + 1 < source.Length && !(source[i] == '*' && source[i + 1] == '/'))
+                {
+                    i++;
+                }
+
+                i++; // skip past the closing '/'
+                result.Append(' ');
+                continue;
+            }
+
+            result.Append(c);
+        }
+
+        return result.ToString();
     }
 
     private static string? ExtractBalancedParenthesised(string source, int openParenIndex)

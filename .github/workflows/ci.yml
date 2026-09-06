@@ -1,7 +1,11 @@
 name: CI
 
+# On a PR branch, only the pull_request event runs the pipeline; push is scoped to
+# main so a branch with an open PR does not build everything twice (the two events
+# have different concurrency groups and would not cancel each other).
 on:
   push:
+    branches: [main]
   pull_request:
 
 # Every gate runs here; any step that fails, fails the run (AR-13).
@@ -85,6 +89,6 @@ jobs:
           root=$(curl -s -o /tmp/root.html -w '%{http_code}' http://localhost:8080/ || true)
           echo "health=$code root=$root"
           docker compose logs --no-color app || true
-          docker compose down -v
+          docker compose down -v || true
           if [ "$ok" != "1" ]; then echo "::error::/health never returned 200 {\"database\":\"ok\"}"; exit 1; fi
           if [ "$root" != "200" ]; then echo "::error::SPA index.html not served from the app origin"; exit 1; fi

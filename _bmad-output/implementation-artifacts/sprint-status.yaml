@@ -29,14 +29,14 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 09-05-2026 23:57
-last_updated: 09-06-2026 02:56
+last_updated: 09-06-2026 12:00
 project: NexusJobBmad
 project_key: NOKEY
 tracking_system: file-system
 story_location: _bmad-output/implementation-artifacts
 development_status:
   epic-1: in-progress
-  1-1-walking-skeleton-with-a-ci-enforced-module-boundary-gate: review
+  1-1-walking-skeleton-with-a-ci-enforced-module-boundary-gate: done
   1-2-from-scratch-design-system-and-the-role-aware-application-sh: backlog
   1-3-company-registration-and-sign-in: backlog
   1-4-job-seeker-registration-and-sign-in: backlog
