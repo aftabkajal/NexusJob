@@ -1,0 +1,102 @@
+/*
+ * Nexus Indigo design tokens — the single source of visual truth.
+ *
+ * Every colour, type-ramp step, radius, and spacing value in the app is defined
+ * here as a `:root` custom property and consumed via `var(--…)`. Nothing outside
+ * `src/shared/tokens/` may hardcode these values (enforced by `lint:tokens`).
+ *
+ * Values match DESIGN.md exactly. See `tokens.ts` for the JS/inline-style mirror.
+ */
+
+:root {
+  /* --- Colour ------------------------------------------------------------- */
+  --color-background: #f5f6fb;
+  --color-surface: #ffffff;
+  --color-primary: #23215e;
+  --color-primary-foreground: #ffffff;
+  --color-accent: #0a7a90;
+  --color-accent-foreground: #ffffff;
+  --color-text-primary: #1a1b2e;
+  --color-text-secondary: #5b5e78;
+  --color-border: #dfe1f0;
+  --color-success: #0b7a42;
+  --color-success-subtle: #e3f6ea;
+  --color-danger: #c42744;
+  --color-danger-subtle: #fbe4e8;
+
+  /* --- Typography ------------------------------------------------------------
+   * Inter is self-hosted via `@fontsource-variable/inter` (family
+   * "Inter Variable"), imported in `app/App.tsx`. The DESIGN.md fallback stack
+   * follows it so text renders before the variable font loads.
+   */
+  --font-family: 'Inter Variable', Inter, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', Helvetica, Arial, sans-serif;
+
+  /* display — Home landing headline only (40 / 700 / -0.02em) */
+  --text-display-size: 40px;
+  --text-display-weight: 700;
+  --text-display-line: 1.15;
+  --text-display-tracking: -0.02em;
+
+  /* heading — page-level titles (28 / 700 / -0.01em) */
+  --text-heading-size: 28px;
+  --text-heading-weight: 700;
+  --text-heading-line: 1.2;
+  --text-heading-tracking: -0.01em;
+
+  /* heading-sm — card titles, section sub-headers (20 / 600) */
+  --text-heading-sm-size: 20px;
+  --text-heading-sm-weight: 600;
+  --text-heading-sm-line: 1.3;
+  --text-heading-sm-tracking: 0;
+
+  /* body — descriptions, field values (16 / 400) */
+  --text-body-size: 16px;
+  --text-body-weight: 400;
+  --text-body-line: 1.6;
+  --text-body-tracking: 0;
+
+  /* body-sm — secondary/helper copy (14 / 400) */
+  --text-body-sm-size: 14px;
+  --text-body-sm-weight: 400;
+  --text-body-sm-line: 1.55;
+  --text-body-sm-tracking: 0;
+
+  /* label — form/button labels, the role toggle options (13 / 600 / +0.04em) */
+  --text-label-size: 13px;
+  --text-label-weight: 600;
+  --text-label-line: 1.4;
+  --text-label-tracking: 0.04em;
+
+  /* caption — timestamps (12 / 500) */
+  --text-caption-size: 12px;
+  --text-caption-weight: 500;
+  --text-caption-line: 1.4;
+  --text-caption-tracking: 0;
+
+  /* --- Radius ----------------------------------------------------------------
+   * `full` is reserved for the auth-role-toggle pill — the one place it is used.
+   */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  /* --- Spacing (4px base) ------------------------------------------------- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  /* --- Named gaps ------------------------------------------------------------
+   * gutter — between columns/cards in a listing grid.
+   * editorial — between major page sections.
+   */
+  --gap-gutter: 32px;
+  --gap-editorial: 96px;
+}

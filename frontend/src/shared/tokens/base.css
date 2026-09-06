@@ -1,0 +1,63 @@
+/*
+ * Base layer — the light-mode + accessibility floor.
+ *
+ * Depends on `tokens.css` being loaded first (both are imported in
+ * `app/App.tsx`). No component styling lives here — only document-level resets,
+ * the global focus indicator, and the reduced-motion kill-switch.
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+  font-family: var(--font-family);
+  font-size: var(--text-body-size);
+  font-weight: var(--text-body-weight);
+  line-height: var(--text-body-line);
+}
+
+#root {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+/*
+ * WCAG 2.1 AA: a visible focus indicator on every interactive element. Keyboard
+ * focus only (`:focus-visible`), so pointer clicks stay quiet. `primary` is the
+ * chrome/identity colour; surfaces painted with `primary` (the nav bar) override
+ * this with `primary-foreground` locally so the ring stays visible.
+ */
+*:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/*
+ * Reduced motion: suppress every fade/slide transition and animation. Motion in
+ * this app is subtle-only (nav hover, route-change fades), so collapsing the
+ * durations to a near-zero value removes all of it without breaking layout.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+}

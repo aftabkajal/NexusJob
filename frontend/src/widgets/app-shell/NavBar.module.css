@@ -1,0 +1,50 @@
+.bar {
+  background-color: var(--color-primary);
+}
+
+.inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: var(--space-4);
+  padding-bottom: var(--space-4);
+}
+
+.wordmark {
+  color: var(--color-primary-foreground);
+  font-family: var(--font-family);
+  font-size: var(--text-heading-sm-size);
+  font-weight: var(--text-heading-sm-weight);
+  line-height: var(--text-heading-sm-line);
+  letter-spacing: var(--text-heading-tracking);
+  text-decoration: none;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+.link {
+  color: var(--color-primary-foreground);
+  font-family: var(--font-family);
+  font-size: var(--text-label-size);
+  font-weight: var(--text-label-weight);
+  line-height: var(--text-label-line);
+  letter-spacing: var(--text-label-tracking);
+  text-decoration: none;
+  opacity: 0.85;
+  transition: opacity 120ms ease;
+}
+
+.link:hover,
+.link[aria-current='page'] {
+  opacity: 1;
+}
+
+/* The bar is painted with `primary`; keep the focus ring visible against it. */
+.link:focus-visible,
+.wordmark:focus-visible {
+  outline-color: var(--color-primary-foreground);
+}

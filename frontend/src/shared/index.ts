@@ -1,5 +1,7 @@
 // FSD `shared` layer: cross-cutting primitives with no domain knowledge.
-// The design-token system (story 1.2) and the generated API client (story 1.3)
-// will live here. Story 1.1 only needs the layer to exist and be importable.
+// One import surface for the layer — the design-token system and the UI kit.
 
 export const APP_NAME = 'NexusJob'
+
+export * from './tokens'
+export * from './ui'

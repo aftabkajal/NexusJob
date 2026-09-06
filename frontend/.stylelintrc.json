@@ -1,0 +1,18 @@
+{
+  "extends": "stylelint-config-standard",
+  "ignoreFiles": ["src/shared/tokens/**"],
+  "rules": {
+    "color-no-hex": true,
+    "declaration-property-value-disallowed-list": {
+      "font-size": ["/px/"],
+      "border-radius": ["/px/"]
+    },
+    "media-feature-name-disallowed-list": ["width", "min-width", "max-width"],
+    "media-feature-range-notation": "prefix",
+    "selector-class-pattern": null,
+    "custom-property-empty-line-before": null,
+    "declaration-empty-line-before": null,
+    "comment-empty-line-before": null,
+    "no-descending-specificity": null
+  }
+}
