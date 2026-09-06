@@ -10,18 +10,25 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Runtime: bare NpgsqlConnection for the /health SELECT 1 probe (no EF Core). -->
+    <!-- Runtime: bare NpgsqlConnection for the /health SELECT 1 probe. -->
     <PackageVersion Include="Npgsql" Version="10.0.3" />
+    <!-- Identity persistence + Host Data-Protection key store (spec 1.3a). All on the v10 line. -->
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.11" />
+    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+    <PackageVersion Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" Version="10.0.10" />
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Test stack: the SM-2 boundary gate and the Host /health tests. -->
+    <!-- Test stack: the SM-2 boundary gate, the Host /health tests, and the Identity integration tests. -->
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
     <PackageVersion Include="TngTech.ArchUnitNET" Version="0.13.4" />
     <PackageVersion Include="TngTech.ArchUnitNET.xUnit" Version="0.13.4" />
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.10" />
+    <PackageVersion Include="Testcontainers.PostgreSql" Version="4.14.0" />
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Identity persistence + /api/auth/* integration tests. References ONLY
+    NexusJob.Host (the composition root), never a module implementation project
+    (spec Design Notes / AD-2) - Identity's behaviour is exercised over HTTP via
+    WebApplicationFactory<Program>. A real Postgres is provided by Testcontainers
+    (postgres:18); Docker must be available.
+  -->
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
+    <PackageReference Include="Npgsql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NexusJob.Host\NexusJob.Host.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -21,7 +21,9 @@ jobs:
   backend:
     name: Backend build + architecture tests
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # 20 (was 15): NexusJob.IntegrationTests pulls postgres:18 via Testcontainers
+    # and runs PBKDF2 hashing; ubuntu-latest has Docker preinstalled.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -33,7 +35,7 @@ jobs:
       - name: Build
         run: dotnet build backend/NexusJob.sln --configuration Release
 
-      - name: Test (SM-2 boundary gate + Host /health)
+      - name: Test (SM-2 boundary gate + Host /health + Identity integration tests)
         run: dotnet test backend/NexusJob.sln --configuration Release --no-build --verbosity normal
 
   frontend:

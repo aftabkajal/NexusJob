@@ -1,8 +1,16 @@
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpLogging;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
+using NexusJob.Host.Persistence;
 using NexusJob.Modules.Applications;
 using NexusJob.Modules.Identity;
+using NexusJob.Modules.Identity.Auth;
+using NexusJob.Modules.Identity.Persistence;
 using NexusJob.Modules.JobPostings;
 using Npgsql;
 
@@ -45,11 +53,56 @@ builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.Never;
 });
 
+// RFC 9457 ProblemDetails on every non-2xx (AD-15).
+builder.Services.AddProblemDetails();
+
+// Built-in .NET 10 minimal-API validation (DataAnnotations). A request body that
+// fails validation is a 400 validation ProblemDetails naming the invalid fields.
+builder.Services.AddValidation();
+
 // DB connection string comes only from environment / .NET configuration
 // (key ConnectionStrings:Postgres, env ConnectionStrings__Postgres). Nothing
 // secret is committed (AD-22).
 var rawPostgresConnectionString = builder.Configuration.GetConnectionString("Postgres");
 var healthProbeConnectionString = HealthProbe.BuildProbeConnectionString(rawPostgresConnectionString);
+
+// ---- App-wide auth infrastructure (AD-13, AD-22) -------------------------
+// One cookie scheme for the whole app. Identity's /api/auth/* slice is the only
+// code that signs it in / clears it; the Host only registers the plumbing.
+builder.Services
+    .AddAuthentication(AuthCookie.Scheme)
+    .AddCookie(AuthCookie.Scheme, options =>
+    {
+        options.Cookie.Name = AuthCookie.CookieName;
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.SlidingExpiration = true;
+        options.ExpireTimeSpan = TimeSpan.FromDays(7);
+
+        // Never redirect an API caller to an HTML login/access-denied page -
+        // answer with a JSON ProblemDetails status (AD-15).
+        options.Events.OnRedirectToLogin = context => WriteProblem(context, StatusCodes.Status401Unauthorized, "Authentication is required.");
+        options.Events.OnRedirectToAccessDenied = context => WriteProblem(context, StatusCodes.Status403Forbidden, "Access is denied.");
+
+        static Task WriteProblem(RedirectContext<CookieAuthenticationOptions> context, int statusCode, string title) =>
+            Results.Problem(title: title, statusCode: statusCode).ExecuteAsync(context.HttpContext);
+    });
+
+builder.Services.AddAuthorization();
+
+// Antiforgery double-submit: token in the X-CSRF-TOKEN header, seeded by
+// GET /api/auth/csrf (AD-13).
+builder.Services.AddAntiforgery(options => options.HeaderName = "X-CSRF-TOKEN");
+
+// Data-Protection keys persist to public.data_protection_keys, owned by the Host
+// (AD-22), so the auth cookie survives restarts.
+builder.Services.AddDbContext<DataProtectionKeysDbContext>(options =>
+    options.UseNpgsql(
+        DbConnectionStrings.ForDataProtection(rawPostgresConnectionString),
+        npgsql => npgsql.MigrationsHistoryTable("__EFMigrationsHistory", "public")));
+builder.Services.AddDataProtection()
+    .PersistKeysToDbContext<DataProtectionKeysDbContext>();
 
 // Module wiring (AD-10): the Host calls all three pairs and nothing else
 // module-specific.
@@ -58,6 +111,28 @@ builder.Services.AddJobPostingsModule(builder.Configuration);
 builder.Services.AddApplicationsModule(builder.Configuration);
 
 var app = builder.Build();
+
+// Unconditional startup migration (Resolved Decisions): apply IdentityDbContext
+// then DataProtectionKeysDbContext before the app serves traffic. The whole
+// block is wrapped in try/catch so the Host still starts when the database is
+// down or misconfigured - GET /health reports "unhealthy" until a later restart
+// applies the migrations. This preserves the story-1.1 invariant and keeps the
+// existing HealthEndpointTests green.
+using (var migrationScope = app.Services.CreateScope())
+{
+    try
+    {
+        migrationScope.ServiceProvider.GetRequiredService<IdentityDbContext>().Database.Migrate();
+        migrationScope.ServiceProvider.GetRequiredService<DataProtectionKeysDbContext>().Database.Migrate();
+    }
+    catch (Exception migrationException)
+    {
+        app.Logger.LogError(
+            migrationException,
+            "Startup database migration failed. The Host will start; GET /health will report \"unhealthy\" "
+            + "until the database is reachable and migrations apply on a later restart.");
+    }
+}
 
 // Fail loudly (once, at startup) when the DB is not configured or its connection
 // string cannot be parsed, so an unconfigured / misconfigured deployment is not
@@ -77,6 +152,12 @@ else if (healthProbeConnectionString is null)
 }
 
 app.UseHttpLogging();
+
+// App-wide auth middleware (AD-13), after request logging and before the module
+// endpoint maps. UseAntiforgery must sit after routing + authentication.
+app.UseAuthentication();
+app.UseAuthorization();
+app.UseAntiforgery();
 
 // Same-origin static SPA hosting (AD-12): no CORS, no proxy.
 app.UseDefaultFiles();
@@ -173,6 +254,22 @@ internal static class HealthProbe
             return null;
         }
     }
+}
+
+/// <summary>Connection-string helpers for the Host-owned EF contexts.</summary>
+internal static class DbConnectionStrings
+{
+    /// <summary>
+    /// The Postgres connection string for the Data-Protection key context. When
+    /// nothing is configured a non-functional placeholder is returned so the Host
+    /// still boots (the startup migration then logs the failure and <c>/health</c>
+    /// reports "unhealthy"); a malformed value is handed through unchanged for the
+    /// same reason. No <c>SearchPath</c> override - the table lives in <c>public</c>.
+    /// </summary>
+    internal static string ForDataProtection(string? raw) =>
+        string.IsNullOrWhiteSpace(raw)
+            ? "Host=localhost;Database=nexusjob;Username=nexusjob;Password=unconfigured_placeholder;Timeout=3;Command Timeout=3"
+            : raw;
 }
 
 /// <summary>Public entry-point marker so WebApplicationFactory-style tests can target this assembly.</summary>

@@ -21,6 +21,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NexusJob.ArchitectureTests"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NexusJob.Host.Tests", "NexusJob.Host.Tests\NexusJob.Host.Tests.csproj", "{A9C7D23E-0497-416F-A987-7B7BFC4F5764}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NexusJob.IntegrationTests", "NexusJob.IntegrationTests\NexusJob.IntegrationTests.csproj", "{8DE6CB13-C485-4172-A227-7CA9695608F4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -139,6 +141,18 @@ Global
 		{A9C7D23E-0497-416F-A987-7B7BFC4F5764}.Release|x64.Build.0 = Release|Any CPU
 		{A9C7D23E-0497-416F-A987-7B7BFC4F5764}.Release|x86.ActiveCfg = Release|Any CPU
 		{A9C7D23E-0497-416F-A987-7B7BFC4F5764}.Release|x86.Build.0 = Release|Any CPU
+		{8DE6CB13-C485-4172-A227-7CA9695608F4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8DE6CB13-C485-4172-A227-7CA9695608F4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8DE6CB13-C485-4172-A227-7CA9695608F4}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{8DE6CB13-C485-4172-A227-7CA9695608F4}.Debug|x64.Build.0 = Debug|Any CPU
+		{8DE6CB13-C485-4172-A227-7CA9695608F4}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{8DE6CB13-C485-4172-A227-7CA9695608F4}.Debug|x86.Build.0 = Debug|Any CPU
+		{8DE6CB13-C485-4172-A227-7CA9695608F4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8DE6CB13-C485-4172-A227-7CA9695608F4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8DE6CB13-C485-4172-A227-7CA9695608F4}.Release|x64.ActiveCfg = Release|Any CPU
+		{8DE6CB13-C485-4172-A227-7CA9695608F4}.Release|x64.Build.0 = Release|Any CPU
+		{8DE6CB13-C485-4172-A227-7CA9695608F4}.Release|x86.ActiveCfg = Release|Any CPU
+		{8DE6CB13-C485-4172-A227-7CA9695608F4}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

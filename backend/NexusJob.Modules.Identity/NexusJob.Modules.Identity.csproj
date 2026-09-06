@@ -14,6 +14,17 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Identity owns its own identity-schema persistence and migration history (AD-5, AD-7). -->
+    <PackageReference Include="Npgsql" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\NexusJob.Modules.Identity.Contracts\NexusJob.Modules.Identity.Contracts.csproj" />
   </ItemGroup>
 
