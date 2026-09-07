@@ -12,6 +12,7 @@ using NexusJob.Modules.Identity;
 using NexusJob.Modules.Identity.Auth;
 using NexusJob.Modules.Identity.Persistence;
 using NexusJob.Modules.JobPostings;
+using NexusJob.Modules.JobPostings.Persistence;
 using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -134,6 +135,7 @@ using (var migrationScope = app.Services.CreateScope())
     {
         migrationScope.ServiceProvider.GetRequiredService<IdentityDbContext>().Database.Migrate();
         migrationScope.ServiceProvider.GetRequiredService<DataProtectionKeysDbContext>().Database.Migrate();
+        migrationScope.ServiceProvider.GetRequiredService<JobPostingsDbContext>().Database.Migrate();
     }
     catch (Exception migrationException)
     {

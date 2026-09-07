@@ -12,6 +12,21 @@ internal sealed record AuthAccountDto(
 
 internal sealed record CsrfTokenDto([property: JsonPropertyName("token")] string Token);
 
+/// <summary>The <c>{ id, title, description, createdAt }</c> representation returned by <c>POST /api/job-postings</c>.</summary>
+internal sealed record JobPostingDto(
+    [property: JsonPropertyName("id")] string Id,
+    [property: JsonPropertyName("title")] string Title,
+    [property: JsonPropertyName("description")] string Description,
+    [property: JsonPropertyName("createdAt")] DateTimeOffset CreatedAt);
+
+/// <summary>The observed row shape of <c>job_postings.job_posting</c>.</summary>
+internal sealed record JobPostingRow(
+    Guid Id,
+    Guid OwnerCompanyId,
+    string Title,
+    string Description,
+    DateTimeOffset CreatedAt);
+
 /// <summary>The observed shape of <c>identity.job_seeker_account</c> after the migration.</summary>
 internal sealed record JobSeekerAccountSchema(
     IReadOnlyList<(string Name, string DataType, bool NotNull)> Columns,
@@ -148,6 +163,55 @@ internal sealed class IdentityDatabase(string connectionString)
 }
 
 /// <summary>
+/// Direct read-only SQL against the Testcontainer for the <c>job_postings</c>
+/// schema, so assertions on rows never go through a JobPostings module type
+/// (which is <c>internal</c> and unreferenced anyway).
+/// </summary>
+internal sealed class JobPostingsDatabase(string connectionString)
+{
+    public async Task<int> CountPostingsForOwnerAsync(Guid ownerId)
+    {
+        await using var connection = new NpgsqlConnection(connectionString);
+        await connection.OpenAsync();
+        await using var command = new NpgsqlCommand(
+            "SELECT count(*) FROM job_postings.job_posting WHERE owner_company_id = @owner", connection);
+        command.Parameters.AddWithValue("owner", ownerId);
+        return Convert.ToInt32(await command.ExecuteScalarAsync());
+    }
+
+    public async Task<int> CountAllPostingsAsync()
+    {
+        await using var connection = new NpgsqlConnection(connectionString);
+        await connection.OpenAsync();
+        await using var command = new NpgsqlCommand(
+            "SELECT count(*) FROM job_postings.job_posting", connection);
+        return Convert.ToInt32(await command.ExecuteScalarAsync());
+    }
+
+    public async Task<JobPostingRow?> GetPostingAsync(Guid id)
+    {
+        await using var connection = new NpgsqlConnection(connectionString);
+        await connection.OpenAsync();
+        await using var command = new NpgsqlCommand(
+            "SELECT id, owner_company_id, title, description, created_at FROM job_postings.job_posting WHERE id = @id",
+            connection);
+        command.Parameters.AddWithValue("id", id);
+        await using var reader = await command.ExecuteReaderAsync();
+        if (!await reader.ReadAsync())
+        {
+            return null;
+        }
+
+        return new JobPostingRow(
+            reader.GetGuid(0),
+            reader.GetGuid(1),
+            reader.GetString(2),
+            reader.GetString(3),
+            reader.GetFieldValue<DateTimeOffset>(4));
+    }
+}
+
+/// <summary>
 /// Wraps an <see cref="HttpClient"/> with the antiforgery double-submit dance:
 /// seed the token from <c>GET /api/auth/csrf</c> (which also sets the antiforgery
 /// cookie in this client's cookie container) and send it back in
@@ -190,4 +254,19 @@ internal sealed class AuthApiClient(HttpClient http)
         var token = await GetCsrfTokenAsync();
         return await PostAsync("/api/auth/login", new { accountType, email, password }, token);
     }
+
+    /// <summary>
+    /// <c>POST /api/job-postings</c> with a freshly seeded antiforgery token (the
+    /// same seeding <see cref="RegisterAsync"/> does). Use the
+    /// <paramref name="csrfToken"/> overload to send a specific token or
+    /// <c>null</c> (the missing-token I/O-matrix row).
+    /// </summary>
+    public async Task<HttpResponseMessage> CreatePostingAsync(string title, string description)
+    {
+        var token = await GetCsrfTokenAsync();
+        return await CreatePostingAsync(title, description, token);
+    }
+
+    public Task<HttpResponseMessage> CreatePostingAsync(string title, string description, string? csrfToken) =>
+        PostAsync("/api/job-postings", new { title, description }, csrfToken);
 }

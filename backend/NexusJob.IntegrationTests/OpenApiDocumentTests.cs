@@ -77,4 +77,66 @@ public sealed class OpenApiDocumentTests(IdentityApiFixture fixture)
             }
         }
     }
+
+    // ---- Row: Fetch the OpenAPI document -- POST /api/job-postings (spec 2.1a) --
+
+    [Fact]
+    public async Task Document_describes_the_job_postings_create_operation_with_its_200_shape_and_problem_responses()
+    {
+        using var client = fixture.CreateClient();
+
+        using var response = await client.GetAsync("/openapi/v1.json");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        await using var stream = await response.Content.ReadAsStreamAsync();
+        using var document = await JsonDocument.ParseAsync(stream);
+        var root = document.RootElement;
+
+        Assert.True(root.TryGetProperty("paths", out var paths));
+        Assert.True(
+            paths.TryGetProperty("/api/job-postings", out var pathItem),
+            "OpenAPI document is missing the '/api/job-postings' path.");
+        Assert.True(
+            pathItem.TryGetProperty("post", out var operation),
+            "'/api/job-postings' does not document a 'POST' operation.");
+
+        Assert.True(operation.TryGetProperty("operationId", out var operationId));
+        Assert.Equal("JobPostings_Create", operationId.GetString());
+
+        Assert.True(operation.TryGetProperty("responses", out var responses));
+        foreach (var statusCode in new[] { "200", "400", "401", "403" })
+        {
+            Assert.True(
+                responses.TryGetProperty(statusCode, out _),
+                $"'POST /api/job-postings' does not document a '{statusCode}' response.");
+        }
+
+        // The 200 body is the { id, title, description, createdAt } representation.
+        var okSchema = responses.GetProperty("200")
+            .GetProperty("content").GetProperty("application/json").GetProperty("schema");
+        var schemaProperties = ResolveSchemaProperties(root, okSchema);
+        Assert.Equal(
+            ["createdAt", "description", "id", "title"],
+            schemaProperties.OrderBy(name => name, StringComparer.Ordinal));
+
+        // 4xx responses are RFC 9457 ProblemDetails.
+        foreach (var statusCode in new[] { "400", "401", "403" })
+        {
+            Assert.True(
+                responses.GetProperty(statusCode).GetProperty("content")
+                    .TryGetProperty("application/problem+json", out _),
+                $"'POST /api/job-postings' {statusCode} is not a problem+json response.");
+        }
+    }
+
+    private static IReadOnlyList<string> ResolveSchemaProperties(JsonElement root, JsonElement schema)
+    {
+        if (schema.TryGetProperty("$ref", out var reference))
+        {
+            var name = reference.GetString()!.Split('/')[^1];
+            schema = root.GetProperty("components").GetProperty("schemas").GetProperty(name);
+        }
+
+        return schema.GetProperty("properties").EnumerateObject().Select(p => p.Name).ToArray();
+    }
 }
