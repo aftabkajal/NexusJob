@@ -16,6 +16,8 @@ public sealed class IdentityDbContext(DbContextOptions<IdentityDbContext> option
 {
     internal DbSet<CompanyAccount> CompanyAccounts => Set<CompanyAccount>();
 
+    internal DbSet<JobSeekerAccount> JobSeekerAccounts => Set<JobSeekerAccount>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         ArgumentNullException.ThrowIfNull(modelBuilder);
@@ -31,6 +33,19 @@ public sealed class IdentityDbContext(DbContextOptions<IdentityDbContext> option
             entity.Property(e => e.Email).HasColumnName("email").IsRequired();
             entity.Property(e => e.PasswordHash).HasColumnName("password_hash").IsRequired();
             entity.Property(e => e.DisplayName).HasColumnName("display_name").IsRequired();
+
+            entity.HasIndex(e => e.Email).IsUnique();
+        });
+
+        modelBuilder.Entity<JobSeekerAccount>(entity =>
+        {
+            entity.ToTable("job_seeker_account");
+
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Email).HasColumnName("email").IsRequired();
+            entity.Property(e => e.PasswordHash).HasColumnName("password_hash").IsRequired();
+            entity.Property(e => e.FullName).HasColumnName("full_name").IsRequired();
 
             entity.HasIndex(e => e.Email).IsUnique();
         });

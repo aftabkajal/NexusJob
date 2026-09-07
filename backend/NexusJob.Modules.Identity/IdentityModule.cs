@@ -56,6 +56,7 @@ public static class IdentityModule
             : DefaultIterationCount;
         services.Configure<PasswordHasherOptions>(options => options.IterationCount = iterationCount);
         services.AddScoped<IPasswordHasher<CompanyAccount>, PasswordHasher<CompanyAccount>>();
+        services.AddScoped<IPasswordHasher<JobSeekerAccount>, PasswordHasher<JobSeekerAccount>>();
 
         services.AddScoped<AntiforgeryEndpointFilter>();
         services.AddScoped<RegisterHandler>();
