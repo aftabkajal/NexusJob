@@ -5,12 +5,13 @@ import { useAuthForm } from '../model/useAuthForm'
 import styles from './AuthForm.module.css'
 
 /**
- * The role-toggle sign-up / log-in surface for Company accounts.
+ * The role-toggle sign-up / log-in surface for Company and Job Seeker accounts.
  *
- * Sign-up mode adds a required "Company name" field above email; log-in mode
- * never shows it. The role toggle defaults to Company with Job Seeker disabled
- * (story 1.4 re-enables it). Validation runs on blur and again on submit —
- * never per keystroke — and every field error is `aria-describedby`-linked.
+ * Sign-up mode adds a required name field above email — labelled "Company name"
+ * or "Full name" per the active role; log-in mode never shows it. Both role
+ * options are selectable; switching the toggle clears field / form errors and
+ * keeps entered values. Validation runs on blur and again on submit — never per
+ * keystroke — and every field error is `aria-describedby`-linked.
  */
 export function AuthForm() {
   const {
@@ -21,12 +22,14 @@ export function AuthForm() {
     formError,
     isSubmitting,
     ids,
-    setRole,
+    changeRole,
     setField,
     blurField,
     switchMode,
     handleSubmit,
   } = useAuthForm()
+
+  const isJobSeeker = role === 'jobSeeker'
 
   const isSignUp = mode === 'signUp'
 
@@ -34,24 +37,18 @@ export function AuthForm() {
     <form className={styles.card} onSubmit={handleSubmit} noValidate>
       <h1 className={styles.heading}>{isSignUp ? 'Create your account' : 'Log in'}</h1>
 
-      <RoleToggle
-        label="Select account type"
-        value={role}
-        onChange={setRole}
-        disabledValues={['jobSeeker']}
-      />
-      <p className={styles.note}>Job Seeker accounts are coming soon.</p>
+      <RoleToggle label="Select account type" value={role} onChange={changeRole} />
 
       {isSignUp && (
         <div className={styles.field}>
           <label htmlFor={ids.name} className={styles.label}>
-            Company name
+            {isJobSeeker ? 'Full name' : 'Company name'}
           </label>
           <input
             id={ids.name}
             name="name"
             type="text"
-            autoComplete="organization"
+            autoComplete={isJobSeeker ? 'name' : 'organization'}
             className={fieldErrors.name ? `${styles.input} ${styles['input-invalid']}` : styles.input}
             value={values.name}
             onChange={(event) => setField('name', event.target.value)}

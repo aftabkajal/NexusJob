@@ -93,3 +93,51 @@ describe('NavBar — signed-in Company viewer', () => {
     expect(onLogOut).toHaveBeenCalledTimes(1)
   })
 })
+
+describe('NavBar — signed-in Job Seeker viewer', () => {
+  function renderJobSeekerNavBar(onLogOut = vi.fn()) {
+    render(
+      <MemoryRouter>
+        <NavBar viewer={{ kind: 'jobSeeker', displayName: 'Priya Raman' }} onLogOut={onLogOut} />
+      </MemoryRouter>,
+    )
+    return { onLogOut }
+  }
+
+  it('resolves navItemsFor to Search only', () => {
+    expect(
+      navItemsFor({ kind: 'jobSeeker', displayName: 'Priya Raman' }).map((item) => item.to),
+    ).toEqual(['/'])
+  })
+
+  it('renders Search, the display name, and a Log out control', () => {
+    renderJobSeekerNavBar()
+
+    const nav = screen.getByRole('navigation', { name: 'Primary' })
+    expect(
+      within(nav)
+        .getAllByRole('link')
+        .map((link) => link.textContent),
+    ).toEqual(['Search'])
+    expect(within(nav).getByText('Priya Raman')).toBeInTheDocument()
+    expect(within(nav).getByRole('button', { name: 'Log out' })).toBeInTheDocument()
+  })
+
+  it('points no nav link at a Company-only or Job-Seeker-only surface', () => {
+    renderJobSeekerNavBar()
+
+    const nav = screen.getByRole('navigation', { name: 'Primary' })
+    for (const link of within(nav).getAllByRole('link')) {
+      expect(ROLE_RESTRICTED_ROUTES).not.toContain(link.getAttribute('href'))
+    }
+  })
+
+  it('invokes onLogOut when Log out is activated', async () => {
+    const user = userEvent.setup()
+    const { onLogOut } = renderJobSeekerNavBar()
+
+    await user.click(screen.getByRole('button', { name: 'Log out' }))
+
+    expect(onLogOut).toHaveBeenCalledTimes(1)
+  })
+})

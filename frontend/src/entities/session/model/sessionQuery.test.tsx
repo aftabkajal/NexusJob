@@ -37,6 +37,28 @@ describe('useSession', () => {
     })
   })
 
+  it('maps a resolved job_seeker account to a Job Seeker viewer', async () => {
+    me.mockResolvedValue({ id: 'js-1', accountType: 'job_seeker', displayName: 'Priya Raman' })
+
+    const { result } = renderHook(() => useSession(), { wrapper })
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(result.current.data).toEqual({
+      kind: 'jobSeeker',
+      id: 'js-1',
+      displayName: 'Priya Raman',
+    })
+  })
+
+  it('puts the query in isError when GET /api/auth/me resolves an unknown accountType', async () => {
+    me.mockResolvedValue({ id: 'x-1', accountType: 'admin', displayName: 'Root' })
+
+    const { result } = renderHook(() => useSession(), { wrapper })
+
+    await waitFor(() => expect(result.current.isError).toBe(true))
+    expect(result.current.data).toBeUndefined()
+  })
+
   it('treats a 401 from GET /api/auth/me as "no viewer" (null), not an error', async () => {
     me.mockRejectedValue({ status: 401, title: 'Unauthorized' })
 

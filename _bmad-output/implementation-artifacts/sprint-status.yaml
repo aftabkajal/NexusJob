@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 09-05-2026 23:57
-last_updated: 09-07-2026 16:45
+last_updated: 09-07-2026 17:40
 project: NexusJobBmad
 project_key: NOKEY
 tracking_system: file-system
@@ -38,8 +38,8 @@ development_status:
   epic-1: in-progress
   1-1-walking-skeleton-with-a-ci-enforced-module-boundary-gate: done
   1-2-from-scratch-design-system-and-the-role-aware-application-sh: review
-  1-3-company-registration-and-sign-in: review  # split: 1.3a backend + 1.3b-i (OpenAPI+NSwag pipeline) DONE + reviewed; 1.3b-ii (deferred-work) frontend Sign up/Log in surface still to do under this key
-  1-4-job-seeker-registration-and-sign-in: review  # split: 1.4a Identity backend (job_seeker_account + /api/auth/* branches) DONE + reviewed; 1.4b (deferred-work) frontend Job Seeker re-enable still to do under this key
+  1-3-company-registration-and-sign-in: review  # split: 1.3a backend + 1.3b-i (OpenAPI+NSwag pipeline) + 1.3b-ii (frontend Sign up/Log in surface) all DONE + reviewed under this key
+  1-4-job-seeker-registration-and-sign-in: review  # split: 1.4a Identity backend (job_seeker_account + /api/auth/* branches) + 1.4b (frontend Job Seeker re-enable) both DONE + reviewed under this key
   epic-1-retrospective: optional
 
   epic-2: backlog

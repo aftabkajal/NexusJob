@@ -32,8 +32,9 @@ export interface RoleToggleProps {
   label?: string
   /**
    * Roles that render disabled: `aria-disabled`, a muted style, skipped by
-   * arrow-key navigation and ignored on click. `features/auth` passes
-   * `['jobSeeker']`; story 1.4 drops the prop to re-enable it.
+   * arrow-key navigation and ignored on click. Story 1.4b dropped the only
+   * usage (`features/auth` no longer passes `['jobSeeker']`); the prop stays
+   * for the Epic-3 apply-gate, which still needs to disable an option.
    */
   disabledValues?: Role[]
 }
