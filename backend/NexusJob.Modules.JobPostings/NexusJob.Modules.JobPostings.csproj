@@ -1,9 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    JobPostings bounded-context module. Story 1.1: wiring-only stub. May
-    reference other modules' *.Contracts only (AD-1); only the Host references
-    this project (AD-10).
+    JobPostings bounded-context module. Story 2.1a: its own job_postings-schema
+    persistence and the POST /api/job-postings create endpoint. May reference
+    other modules' *.Contracts only (AD-1); only the Host references this
+    project (AD-10).
   -->
   <PropertyGroup>
     <RootNamespace>NexusJob.Modules.JobPostings</RootNamespace>
@@ -11,6 +12,17 @@
 
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- JobPostings owns its own job_postings-schema persistence and migration history (AD-5, AD-7). -->
+    <PackageReference Include="Npgsql" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
