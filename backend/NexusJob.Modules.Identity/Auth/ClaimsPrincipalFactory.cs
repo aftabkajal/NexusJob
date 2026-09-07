@@ -12,12 +12,18 @@ namespace NexusJob.Modules.Identity.Auth;
 /// </summary>
 internal static class ClaimsPrincipalFactory
 {
-    public static ClaimsPrincipal ForCompany(Guid accountId)
+    public static ClaimsPrincipal ForCompany(Guid accountId) =>
+        For(accountId, AccountType.Company);
+
+    public static ClaimsPrincipal ForJobSeeker(Guid accountId) =>
+        For(accountId, AccountType.JobSeeker);
+
+    private static ClaimsPrincipal For(Guid accountId, string accountType)
     {
         var identity = new ClaimsIdentity(
             [
                 new Claim(ClaimTypes.NameIdentifier, accountId.ToString()),
-                new Claim(AccountType.ClaimType, AccountType.Company),
+                new Claim(AccountType.ClaimType, accountType),
             ],
             AuthCookie.Scheme,
             nameType: ClaimTypes.NameIdentifier,
