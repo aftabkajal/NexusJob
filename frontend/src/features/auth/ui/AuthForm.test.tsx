@@ -48,7 +48,7 @@ beforeEach(() => {
 })
 
 describe('AuthForm', () => {
-  it('renders sign-up mode by default with a required Company name field and a disabled Job Seeker option', () => {
+  it('renders sign-up mode by default with a required Company name field and both role options selectable', () => {
     renderForm()
 
     expect(screen.getByRole('heading', { name: 'Create your account' })).toBeInTheDocument()
@@ -56,9 +56,143 @@ describe('AuthForm', () => {
     expect(screen.getByLabelText('Email')).toBeInTheDocument()
     expect(screen.getByLabelText('Password')).toBeInTheDocument()
     expect(screen.getByRole('radio', { name: 'Company' })).toBeChecked()
-    expect(screen.getByRole('radio', { name: 'Job Seeker' })).toHaveAttribute('aria-disabled', 'true')
-    expect(screen.getByText('Job Seeker accounts are coming soon.')).toBeInTheDocument()
+    const jobSeekerOption = screen.getByRole('radio', { name: 'Job Seeker' })
+    expect(jobSeekerOption).not.toHaveAttribute('aria-disabled')
+    expect(jobSeekerOption).not.toBeChecked()
+    expect(screen.queryByText('Job Seeker accounts are coming soon.')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Create account' })).toHaveAttribute('type', 'submit')
+  })
+
+  it('switching to Job Seeker relabels the name field, keeps entered values, and clears field errors', async () => {
+    const user = userEvent.setup()
+    renderForm()
+
+    await user.type(screen.getByLabelText('Company name'), 'Acme Inc')
+    await user.type(screen.getByLabelText('Email'), 'raj@acme.test')
+    await user.type(screen.getByLabelText('Password'), 'password123')
+    // Force a field error, then switch roles.
+    await user.click(screen.getByLabelText('Email'))
+    await user.clear(screen.getByLabelText('Email'))
+    await user.tab()
+    expect(screen.getByText('Enter your email address.')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('radio', { name: 'Job Seeker' }))
+
+    expect(screen.getByRole('radio', { name: 'Job Seeker' })).toBeChecked()
+    expect(screen.getByLabelText('Full name')).toHaveValue('Acme Inc')
+    expect(screen.getByLabelText('Full name')).toHaveAttribute('autocomplete', 'name')
+    expect(screen.getByLabelText('Password')).toHaveValue('password123')
+    expect(screen.queryByText('Enter your email address.')).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('radio', { name: 'Company' }))
+    expect(screen.getByLabelText('Company name')).toHaveAttribute('autocomplete', 'organization')
+  })
+
+  it('clears the form-level alert error when the role is switched', async () => {
+    const user = userEvent.setup()
+    login.mockRejectedValue({ status: 401, title: 'Unauthorized' })
+    renderForm()
+
+    await user.click(screen.getByRole('button', { name: 'Log in' })) // sign-up -> log-in
+    await user.type(screen.getByLabelText('Email'), 'raj@acme.test')
+    await user.type(screen.getByLabelText('Password'), 'wrongpass1')
+    await user.click(screen.getByRole('button', { name: 'Log in' })) // submit
+
+    expect(await screen.findByRole('alert')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('radio', { name: 'Job Seeker' }))
+
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('keeps a visible field error when the already-active role option is re-clicked', async () => {
+    const user = userEvent.setup()
+    renderForm()
+
+    await user.click(screen.getByRole('button', { name: 'Create account' }))
+    expect(screen.getByText('Enter your company name.')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('radio', { name: 'Company' })) // already active
+
+    expect(screen.getByText('Enter your company name.')).toBeInTheDocument()
+  })
+
+  it('registers a Job Seeker with accountType "job_seeker", invalidates the session, and navigates to "/"', async () => {
+    const user = userEvent.setup()
+    register.mockResolvedValue({ id: 'js-1', accountType: 'job_seeker', displayName: 'Priya Raman' })
+    const { invalidateSpy } = renderForm()
+
+    await user.click(screen.getByRole('radio', { name: 'Job Seeker' }))
+    await user.type(screen.getByLabelText('Full name'), 'Priya Raman')
+    await user.type(screen.getByLabelText('Email'), 'priya@seeker.test')
+    await user.type(screen.getByLabelText('Password'), 'password123')
+    await user.click(screen.getByRole('button', { name: 'Create account' }))
+
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/'))
+    expect(register).toHaveBeenCalledWith({
+      accountType: 'job_seeker',
+      name: 'Priya Raman',
+      email: 'priya@seeker.test',
+      password: 'password123',
+    })
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['session', 'me'] })
+  })
+
+  it('logs in a Job Seeker with accountType "job_seeker"', async () => {
+    const user = userEvent.setup()
+    login.mockResolvedValue({ id: 'js-9', accountType: 'job_seeker', displayName: 'Priya Raman' })
+    renderForm()
+
+    await user.click(screen.getByRole('button', { name: 'Log in' })) // sign-up -> log-in
+    await user.click(screen.getByRole('radio', { name: 'Job Seeker' }))
+    await user.type(screen.getByLabelText('Email'), 'priya@seeker.test')
+    await user.type(screen.getByLabelText('Password'), 'password123')
+    await user.click(screen.getByRole('button', { name: 'Log in' })) // submit
+
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/'))
+    expect(login).toHaveBeenCalledWith({
+      accountType: 'job_seeker',
+      email: 'priya@seeker.test',
+      password: 'password123',
+    })
+    expect(register).not.toHaveBeenCalled()
+  })
+
+  it('shows the Job Seeker duplicate-email message under the email field on a 409', async () => {
+    const user = userEvent.setup()
+    register.mockRejectedValue({ status: 409, title: 'Conflict' })
+    renderForm()
+
+    await user.click(screen.getByRole('radio', { name: 'Job Seeker' }))
+    await user.type(screen.getByLabelText('Full name'), 'Priya Raman')
+    await user.type(screen.getByLabelText('Email'), 'taken@seeker.test')
+    await user.type(screen.getByLabelText('Password'), 'password123')
+    await user.click(screen.getByRole('button', { name: 'Create account' }))
+
+    await waitFor(() =>
+      expect(
+        screen.getByText('This email is already registered as a Job Seeker.'),
+      ).toBeInTheDocument(),
+    )
+    const email = screen.getByLabelText('Email')
+    const describedBy = email.getAttribute('aria-describedby')
+    expect(document.getElementById(describedBy as string)).toHaveTextContent(
+      'This email is already registered as a Job Seeker.',
+    )
+    expect(screen.getByLabelText('Full name')).toHaveValue('Priya Raman')
+    expect(screen.getByLabelText('Password')).toHaveValue('password123')
+    expect(mockNavigate).not.toHaveBeenCalled()
+  })
+
+  it('validates an empty Full name with the Job Seeker message', async () => {
+    const user = userEvent.setup()
+    renderForm()
+
+    await user.click(screen.getByRole('radio', { name: 'Job Seeker' }))
+    await user.click(screen.getByRole('button', { name: 'Create account' }))
+
+    expect(screen.getByText('Enter your full name.')).toBeInTheDocument()
+    expect(register).not.toHaveBeenCalled()
   })
 
   it('switches to log-in mode: name field removed, labels change, email and password retained', async () => {

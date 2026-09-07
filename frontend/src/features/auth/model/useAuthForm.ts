@@ -11,8 +11,13 @@ export type AuthMode = 'signUp' | 'logIn'
 type FieldName = 'name' | 'email' | 'password'
 type FieldErrors = Partial<Record<FieldName, string>>
 
-/** Prescribed copy — used verbatim, do not reword. */
-const DUPLICATE_EMAIL_MESSAGE = 'This email is already registered as a Company.'
+/** Prescribed copy — used verbatim, do not reword. Role-aware: names the role
+ * the email is already taken by, matching the epic microcopy rules. */
+function duplicateEmailMessage(role: Role): string {
+  return role === 'jobSeeker'
+    ? 'This email is already registered as a Job Seeker.'
+    : 'This email is already registered as a Company.'
+}
 const CREDENTIAL_MISMATCH_MESSAGE = "That email and password don't match. Please try again."
 /** Fallback for any other failure. Formal, complete sentence, no exclamation. */
 const GENERIC_MESSAGE = 'We could not complete your request. Please try again.'
@@ -21,8 +26,9 @@ const GENERIC_MESSAGE = 'We could not complete your request. Please try again.'
 // authoritative; this only catches the obviously malformed before a request.
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-function validateName(value: string): string | undefined {
-  return value.trim() === '' ? 'Enter your company name.' : undefined
+function validateName(value: string, role: Role): string | undefined {
+  if (value.trim() !== '') return undefined
+  return role === 'jobSeeker' ? 'Enter your full name.' : 'Enter your company name.'
 }
 
 function validateEmail(value: string): string | undefined {
@@ -38,8 +44,7 @@ function validatePassword(value: string): string | undefined {
   return undefined
 }
 
-const VALIDATORS: Record<FieldName, (value: string) => string | undefined> = {
-  name: validateName,
+const VALIDATORS: Record<'email' | 'password', (value: string) => string | undefined> = {
   email: validateEmail,
   password: validatePassword,
 }
@@ -74,16 +79,20 @@ export function useAuthForm() {
 
   const mutation = useMutation({
     mutationFn: (): Promise<unknown> => {
+      // The single Role → API request wire-value translation. `job_seeker` never
+      // escapes this closure on the request side — no component prop or the
+      // shell knows it (the response `accountType` is mapped in `fetchSession`).
+      const accountType = role === 'jobSeeker' ? 'job_seeker' : 'company'
       if (mode === 'signUp') {
         return authClient.register({
-          accountType: 'company',
+          accountType,
           name: values.name.trim(),
           email: values.email.trim(),
           password: values.password,
         })
       }
       return authClient.login({
-        accountType: 'company',
+        accountType,
         email: values.email.trim(),
         password: values.password,
       })
@@ -97,7 +106,7 @@ export function useAuthForm() {
     onError: (error: unknown) => {
       const apiError = toApiError(error)
       if (apiError?.status === 409) {
-        setFieldErrors((prev) => ({ ...prev, email: DUPLICATE_EMAIL_MESSAGE }))
+        setFieldErrors((prev) => ({ ...prev, email: duplicateEmailMessage(role) }))
         return
       }
       if (apiError?.status === 401) {
@@ -125,11 +134,30 @@ export function useAuthForm() {
 
   const blurField = (field: FieldName) => {
     if (field === 'name' && mode !== 'signUp') return
-    setFieldErrors((prev) => ({ ...prev, [field]: VALIDATORS[field](values[field]) }))
+    const message =
+      field === 'name' ? validateName(values.name, role) : VALIDATORS[field](values[field])
+    setFieldErrors((prev) => ({ ...prev, [field]: message }))
   }
 
   const switchMode = () => {
     setMode((prev) => (prev === 'signUp' ? 'logIn' : 'signUp'))
+    setFieldErrors({})
+    setFormError(undefined)
+  }
+
+  /**
+   * Switch the active role. Clears every field + form error (the entered name /
+   * email / password are kept) — a faithful, simpler reading of the 1.4 AC's
+   * "role-specific field errors", matching how `switchMode` already behaves.
+   *
+   * A no-op when the role is unchanged (`RoleToggle` fires `onChange` with the
+   * already-active role on a click / Enter / Space — selection follows focus)
+   * or while a request is in flight (so an in-flight `409`'s `onError` still
+   * labels the account type that was actually submitted).
+   */
+  const changeRole = (next: Role) => {
+    if (next === role || mutation.isPending) return
+    setRole(next)
     setFieldErrors({})
     setFormError(undefined)
   }
@@ -139,7 +167,7 @@ export function useAuthForm() {
     setFormError(undefined)
 
     const nextErrors: FieldErrors = {}
-    if (mode === 'signUp') nextErrors.name = validateName(values.name)
+    if (mode === 'signUp') nextErrors.name = validateName(values.name, role)
     nextErrors.email = validateEmail(values.email)
     nextErrors.password = validatePassword(values.password)
     setFieldErrors(nextErrors)
@@ -161,7 +189,7 @@ export function useAuthForm() {
       password: `${baseId}-password`,
       formError: `${baseId}-form-error`,
     },
-    setRole,
+    changeRole,
     setField,
     blurField,
     switchMode,

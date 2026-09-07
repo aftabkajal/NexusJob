@@ -77,14 +77,38 @@ describe('App routing — anonymous viewer', () => {
     expect(screen.getByRole('heading', { name: 'Create your account' })).toBeInTheDocument()
     expect(screen.getByRole('radiogroup', { name: 'Select account type' })).toBeInTheDocument()
     expect(screen.getByRole('radio', { name: 'Company' })).toBeChecked()
-    expect(screen.getByRole('radio', { name: 'Job Seeker' })).toHaveAttribute(
-      'aria-disabled',
-      'true',
-    )
-    expect(screen.getByText('Job Seeker accounts are coming soon.')).toBeInTheDocument()
+    const jobSeekerOption = screen.getByRole('radio', { name: 'Job Seeker' })
+    expect(jobSeekerOption).not.toHaveAttribute('aria-disabled')
+    expect(jobSeekerOption).not.toBeChecked()
+    expect(screen.queryByText('Job Seeker accounts are coming soon.')).not.toBeInTheDocument()
     expect(
       screen.queryByRole('heading', { name: 'This page is not available.' }),
     ).not.toBeInTheDocument()
+  })
+})
+
+describe('App routing — signed-in Job Seeker viewer', () => {
+  it('redirects "/sign-in" to "/" — no reason to re-authenticate', () => {
+    renderAt('/sign-in', { kind: 'jobSeeker', id: 'js-1', displayName: 'Priya Raman' })
+
+    expect(
+      screen.getByRole('heading', { name: 'Find your next role. Post your next hire.' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('heading', { name: 'Create your account' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('shows the signed-in nav (Search + display name + Log out, no role-only links)', () => {
+    renderAt('/', { kind: 'jobSeeker', id: 'js-1', displayName: 'Priya Raman' })
+
+    const nav = screen.getByRole('navigation', { name: 'Primary' })
+    expect(nav).toHaveTextContent('Search')
+    expect(nav).toHaveTextContent('Priya Raman')
+    expect(screen.getByRole('button', { name: 'Log out' })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Post a Job' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'My Postings' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'My Applications' })).not.toBeInTheDocument()
   })
 })
 

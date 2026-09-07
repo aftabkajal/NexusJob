@@ -33,7 +33,7 @@ export function AppShell({ viewer: viewerOverride }: AppShellProps) {
   const viewer: Viewer =
     viewerOverride ??
     (session.data
-      ? { kind: 'company', displayName: session.data.displayName }
+      ? { kind: session.data.kind, displayName: session.data.displayName }
       : { kind: 'anonymous' })
 
   const handleLogOut = async () => {

@@ -11,12 +11,12 @@ export const sessionQueryKey = ['session', 'me'] as const
 
 /**
  * The resolved viewer. `null` from the query means "no viewer" (signed out).
- * Story 1.3b only knows the Company shape; the Job Seeker kind arrives in 1.4.
- * Named `SessionViewer` to stay distinct from the `widgets/app-shell` `Viewer`
- * union that the shell renders from.
+ * `kind` mirrors the account's `accountType` (`company` / `job_seeker`) as the
+ * camelCase UI value. Named `SessionViewer` to stay distinct from the
+ * `widgets/app-shell` `Viewer` union that the shell renders from.
  */
 export interface SessionViewer {
-  kind: 'company'
+  kind: 'company' | 'jobSeeker'
   id: string
   displayName: string
 }
@@ -24,7 +24,14 @@ export interface SessionViewer {
 async function fetchSession(): Promise<SessionViewer | null> {
   try {
     const account = await authClient.me()
-    return { kind: 'company', id: account.id, displayName: account.displayName }
+    switch (account.accountType) {
+      case 'company':
+        return { kind: 'company', id: account.id, displayName: account.displayName }
+      case 'job_seeker':
+        return { kind: 'jobSeeker', id: account.id, displayName: account.displayName }
+      default:
+        throw new Error(`unexpected accountType: ${account.accountType}`)
+    }
   } catch (err) {
     if (toApiError(err)?.status === 401) {
       return null
