@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using NexusJob.Modules.Identity.Auth;
+using NexusJob.Modules.Identity.Contracts;
 using NexusJob.Modules.Identity.Features;
 using NexusJob.Modules.Identity.Features.GetCsrfToken;
 using NexusJob.Modules.Identity.Features.GetMe;
@@ -64,6 +65,11 @@ public static class IdentityModule
         services.AddScoped<GetMeHandler>();
         services.AddScoped<LogoutHandler>();
         services.AddScoped<GetCsrfTokenHandler>();
+
+        // Identity's cross-module read surface (AD-6 / AD-19). Registered here so
+        // any module that references Identity.Contracts can resolve it; JobPostings'
+        // detail handler is the first consumer (spec 2.2a).
+        services.AddScoped<IIdentityApi, IdentityApi>();
 
         return services;
     }

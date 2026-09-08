@@ -27,6 +27,13 @@
 
   <ItemGroup>
     <ProjectReference Include="..\NexusJob.Modules.JobPostings.Contracts\NexusJob.Modules.JobPostings.Contracts.csproj" />
+    <!--
+      Cross-module read of the owning Company's display name goes through
+      Identity's published Contract (AD-1 / AD-5 / AD-19), never the identity
+      schema. A .Contracts reference only - the ArchUnitNET boundary gates permit
+      any *.Contracts edge.
+    -->
+    <ProjectReference Include="..\NexusJob.Modules.Identity.Contracts\NexusJob.Modules.Identity.Contracts.csproj" />
   </ItemGroup>
 
 </Project>

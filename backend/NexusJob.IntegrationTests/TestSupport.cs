@@ -19,6 +19,13 @@ internal sealed record JobPostingDto(
     [property: JsonPropertyName("description")] string Description,
     [property: JsonPropertyName("createdAt")] DateTimeOffset CreatedAt);
 
+/// <summary>The <c>{ id, title, description, companyName }</c> representation returned by <c>GET /api/job-postings/{id}</c>.</summary>
+internal sealed record JobPostingDetailDto(
+    [property: JsonPropertyName("id")] string Id,
+    [property: JsonPropertyName("title")] string Title,
+    [property: JsonPropertyName("description")] string Description,
+    [property: JsonPropertyName("companyName")] string CompanyName);
+
 /// <summary>The observed row shape of <c>job_postings.job_posting</c>.</summary>
 internal sealed record JobPostingRow(
     Guid Id,
@@ -209,6 +216,30 @@ internal sealed class JobPostingsDatabase(string connectionString)
             reader.GetString(3),
             reader.GetFieldValue<DateTimeOffset>(4));
     }
+
+    /// <summary>
+    /// Inserts a posting row directly, bypassing <c>POST /api/job-postings</c>, so a
+    /// test can construct an orphan posting whose <c>owner_company_id</c> has no
+    /// <c>company_account</c> (unreachable through the API - every real posting's
+    /// owner comes from an authenticated Company). Returns the new posting id.
+    /// </summary>
+    public async Task<Guid> InsertPostingAsync(Guid ownerCompanyId, string title, string description)
+    {
+        var id = Guid.CreateVersion7();
+        await using var connection = new NpgsqlConnection(connectionString);
+        await connection.OpenAsync();
+        await using var command = new NpgsqlCommand(
+            "INSERT INTO job_postings.job_posting (id, owner_company_id, title, description, created_at) " +
+            "VALUES (@id, @owner, @title, @description, @createdAt)",
+            connection);
+        command.Parameters.AddWithValue("id", id);
+        command.Parameters.AddWithValue("owner", ownerCompanyId);
+        command.Parameters.AddWithValue("title", title);
+        command.Parameters.AddWithValue("description", description);
+        command.Parameters.AddWithValue("createdAt", DateTimeOffset.UtcNow);
+        await command.ExecuteNonQueryAsync();
+        return id;
+    }
 }
 
 /// <summary>
@@ -269,4 +300,17 @@ internal sealed class AuthApiClient(HttpClient http)
 
     public Task<HttpResponseMessage> CreatePostingAsync(string title, string description, string? csrfToken) =>
         PostAsync("/api/job-postings", new { title, description }, csrfToken);
+
+    /// <summary>
+    /// <c>GET /api/job-postings/{id}</c> - anonymous (AD-18): no antiforgery seed,
+    /// no auth header. The client's cookie container is used as-is, so a caller
+    /// that has already signed in exercises the "authenticated caller gets the
+    /// identical 200" row.
+    /// </summary>
+    public Task<HttpResponseMessage> GetPostingAsync(Guid id) =>
+        http.GetAsync($"/api/job-postings/{id}");
+
+    /// <summary>Same, but with a raw (possibly non-GUID) path segment for the routing-404 row.</summary>
+    public Task<HttpResponseMessage> GetPostingRawAsync(string idSegment) =>
+        http.GetAsync($"/api/job-postings/{idSegment}");
 }
