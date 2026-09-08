@@ -5,5 +5,6 @@ export const APP_NAME = 'NexusJob'
 
 // The generated API client is imported from the `shared/api` sub-path (AD-16),
 // not re-exported through this top-level barrel.
+export * from './lib'
 export * from './tokens'
 export * from './ui'

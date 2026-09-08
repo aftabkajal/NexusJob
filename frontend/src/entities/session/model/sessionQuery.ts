@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 
+import { toApiError } from '../../../shared/lib'
+
 import { authClient } from '../api/authClient'
-import { toApiError } from '../api/toApiError'
 
 /**
  * The `me` query key, owned by this slice (AD-16). Every action that changes

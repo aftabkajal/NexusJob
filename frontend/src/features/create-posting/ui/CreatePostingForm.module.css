@@ -1,0 +1,119 @@
+/*
+ * Post-a-Job card — mirrors `AuthForm.module.css`. Every value is a design
+ * token: card at `--radius-lg` on `--color-surface` with a `--color-border`
+ * edge, inputs at `--radius-sm`, the single accent Publish submit at
+ * `--radius-md`. The failure banner is `--color-danger` text on
+ * `--color-danger-subtle`; the success confirmation is `--color-success` on
+ * `--color-success-subtle`.
+ */
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: 100%;
+  max-width: 640px;
+  margin-inline: auto;
+  padding: var(--space-6);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.heading {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: var(--text-heading-size);
+  font-weight: var(--text-heading-weight);
+  line-height: var(--text-heading-line);
+  letter-spacing: var(--text-heading-tracking);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.label {
+  color: var(--color-text-primary);
+  font-size: var(--text-label-size);
+  font-weight: var(--text-label-weight);
+  line-height: var(--text-label-line);
+  letter-spacing: var(--text-label-tracking);
+}
+
+.input {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  color: var(--color-text-primary);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-family);
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-line);
+}
+
+.input::placeholder {
+  color: var(--color-text-secondary);
+}
+
+.textarea {
+  min-height: var(--space-8);
+  resize: vertical;
+}
+
+.input-invalid {
+  border-color: var(--color-danger);
+}
+
+.error {
+  margin: 0;
+  color: var(--color-danger);
+  font-size: var(--text-caption-size);
+  font-weight: var(--text-caption-weight);
+  line-height: var(--text-caption-line);
+}
+
+.banner {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  color: var(--color-danger);
+  background-color: var(--color-danger-subtle);
+  border-radius: var(--radius-md);
+  font-size: var(--text-body-sm-size);
+  font-weight: var(--text-body-sm-weight);
+  line-height: var(--text-body-sm-line);
+}
+
+.confirmation {
+  margin: 0;
+  padding: var(--space-4);
+  color: var(--color-success);
+  background-color: var(--color-success-subtle);
+  border-radius: var(--radius-md);
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-line);
+}
+
+.submit {
+  margin-top: var(--space-2);
+  width: 100%;
+  padding: var(--space-3) var(--space-5);
+  color: var(--color-accent-foreground);
+  background-color: var(--color-accent);
+  border: 0;
+  border-radius: var(--radius-md);
+  font-family: var(--font-family);
+  font-size: var(--text-label-size);
+  font-weight: var(--text-label-weight);
+  line-height: var(--text-label-line);
+  letter-spacing: var(--text-label-tracking);
+  cursor: pointer;
+}
+
+.submit:disabled {
+  cursor: default;
+  opacity: 0.7;
+}

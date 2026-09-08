@@ -6,8 +6,18 @@
 // consumers import from `shared/api` rather than the NSwag-named file — that
 // name can change without touching call sites.
 //
-// Re-exports the generated client classes (`AuthClient`, `Client`), the request
-// and response interfaces (`RegisterRequest`, `LoginRequest`,
-// `AuthAccountResponse`, `CsrfTokenResponse`, `ProblemDetails`) and the
+// Re-exports the generated client classes (`AuthClient`, `Client`,
+// `JobPostingsClient`), the request and response interfaces (`RegisterRequest`,
+// `LoginRequest`, `AuthAccountResponse`, `CsrfTokenResponse`,
+// `CreateJobPostingRequest`, `JobPostingResponse`, `ProblemDetails`) and the
 // `ApiException` error type.
+//
+// `./http` is a hand-written sibling of the generated file: the shared HTTP
+// plumbing that every `entities/*/api` and `features/*/api` slice configures its
+// client with. Only the three names a slice actually needs are re-exported here
+// — `createHttp` (the `fetch` factory), `callWithCsrfRetry` (the mutating-call
+// wrapper), and `resetCsrfToken` (tests). The token cache, `withCredentialsAndCsrf`,
+// and `isAntiforgeryFailure` stay internal to `./http`. It regenerates to
+// nothing — `npm run generate:api` leaves it untouched.
+export { createHttp, callWithCsrfRetry, resetCsrfToken } from './http'
 export * from './nexus-api-client'

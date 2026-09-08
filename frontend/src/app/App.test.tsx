@@ -8,8 +8,8 @@ import { authClient, sessionQueryKey, type SessionViewer } from '../entities'
 
 import { routes } from './App'
 
-// Keep the real `entities` surface (queries, keys, `toApiError`) but replace the
-// network-touching client so a mounted `useSession()` never hits `window.fetch`.
+// Keep the real `entities` surface (queries, keys, `useSession`) but replace the
+// network-touching clients so a mounted `useSession()` never hits `window.fetch`.
 vi.mock('../entities', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../entities')>()
   return {
@@ -20,6 +20,7 @@ vi.mock('../entities', async (importOriginal) => {
       login: vi.fn(),
       logout: vi.fn().mockResolvedValue(undefined),
     },
+    jobPostingsClient: { create: vi.fn() },
   }
 })
 
@@ -124,14 +125,14 @@ describe('App routing — signed-in Company viewer', () => {
     ).not.toBeInTheDocument()
   })
 
-  it('shows the Company nav (Search + display name + Log out, no Epic-2 links)', () => {
+  it('shows the Company nav (Search + Post a Job + display name + Log out)', () => {
     renderAt('/', { kind: 'company', id: 'c-1', displayName: 'Cobalt Ledger' })
 
     const nav = screen.getByRole('navigation', { name: 'Primary' })
     expect(nav).toHaveTextContent('Search')
+    expect(screen.getByRole('link', { name: 'Post a Job' })).toHaveAttribute('href', '/post-a-job')
     expect(nav).toHaveTextContent('Cobalt Ledger')
     expect(screen.getByRole('button', { name: 'Log out' })).toBeInTheDocument()
-    expect(screen.queryByRole('link', { name: 'Post a Job' })).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'My Postings' })).not.toBeInTheDocument()
   })
 
@@ -167,5 +168,34 @@ describe('App routing — signed-in Company viewer', () => {
     )
     expect(queryClient.getQueryData(sessionQueryKey)).toBeNull()
     expect(screen.queryByRole('button', { name: 'Log out' })).not.toBeInTheDocument()
+  })
+})
+
+describe('App routing — /post-a-job guard', () => {
+  it('renders the Post-a-Job card for a signed-in Company', () => {
+    renderAt('/post-a-job', { kind: 'company', id: 'c-1', displayName: 'Cobalt Ledger' })
+
+    expect(screen.getByRole('heading', { name: 'Post a job' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Title')).toBeInTheDocument()
+    expect(screen.getByLabelText('Description')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Publish' })).toHaveAttribute('type', 'submit')
+  })
+
+  it('redirects a signed-in Job Seeker at /post-a-job to "/"', () => {
+    renderAt('/post-a-job', { kind: 'jobSeeker', id: 'js-1', displayName: 'Priya Raman' })
+
+    expect(
+      screen.getByRole('heading', { name: 'Find your next role. Post your next hire.' }),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Post a job' })).not.toBeInTheDocument()
+  })
+
+  it('redirects an anonymous viewer at /post-a-job to "/"', () => {
+    renderAt('/post-a-job')
+
+    expect(
+      screen.getByRole('heading', { name: 'Find your next role. Post your next hire.' }),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Post a job' })).not.toBeInTheDocument()
   })
 })
