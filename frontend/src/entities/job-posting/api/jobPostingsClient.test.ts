@@ -117,3 +117,44 @@ describe('jobPostingsClient.create', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 })
+
+describe('jobPostingsClient.getById', () => {
+  it('issues GET /api/job-postings/{id} with credentials and resolves the JobPostingDetailResponse', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(200, {
+        id: 'jp-1',
+        title: 'Staff Engineer',
+        description: 'Build the platform.',
+        companyName: 'Cobalt Ledger',
+      }),
+    )
+
+    const result = await jobPostingsClient.getById('jp-1')
+
+    expect(result).toEqual({
+      id: 'jp-1',
+      title: 'Staff Engineer',
+      description: 'Build the platform.',
+      companyName: 'Cobalt Ledger',
+    })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(urlOf(0)).toBe('/api/job-postings/jp-1')
+    expect((initOf(0).method ?? 'GET').toUpperCase()).toBe('GET')
+    expect(initOf(0).credentials).toBe('include')
+    expect(headerOf(0, 'X-CSRF-TOKEN')).toBeNull()
+  })
+
+  it('propagates a 404 unchanged, with no CSRF seed or retry', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(404, {
+        type: 'https://tools.ietf.org/html/rfc9110#section-15.5.5',
+        title: 'Not Found',
+        status: 404,
+      }),
+    )
+
+    await expect(jobPostingsClient.getById('missing')).rejects.toMatchObject({ status: 404 })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(urlOf(0)).toBe('/api/job-postings/missing')
+  })
+})

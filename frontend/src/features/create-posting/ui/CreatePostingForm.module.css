@@ -3,8 +3,7 @@
  * token: card at `--radius-lg` on `--color-surface` with a `--color-border`
  * edge, inputs at `--radius-sm`, the single accent Publish submit at
  * `--radius-md`. The failure banner is `--color-danger` text on
- * `--color-danger-subtle`; the success confirmation is `--color-success` on
- * `--color-success-subtle`.
+ * `--color-danger-subtle`.
  */
 
 .card {
@@ -85,16 +84,6 @@
   font-size: var(--text-body-sm-size);
   font-weight: var(--text-body-sm-weight);
   line-height: var(--text-body-sm-line);
-}
-
-.confirmation {
-  margin: 0;
-  padding: var(--space-4);
-  color: var(--color-success);
-  background-color: var(--color-success-subtle);
-  border-radius: var(--radius-md);
-  font-size: var(--text-body-size);
-  line-height: var(--text-body-line);
 }
 
 .submit {

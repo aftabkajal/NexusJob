@@ -1,5 +1,3 @@
-import { useEffect, useRef } from 'react'
-
 import {
   DESCRIPTION_MAX,
   TITLE_MAX,
@@ -13,56 +11,16 @@ import styles from './CreatePostingForm.module.css'
  * required description `<textarea>`, and a single Publish action rendered as the
  * `apply-button` (solid `--color-accent`) — the one primary action here.
  *
- * On a successful publish the form is replaced in place by a `--color-success`
- * confirmation panel with a "Post another job" affordance that resets the form
- * (Story 2.2 will change this to a redirect to the new posting's detail view).
- * Validation runs on blur and again on submit — never per keystroke — and every
- * field error is `aria-describedby`-linked; a network / server failure shows the
- * `--color-danger` banner with the entered values retained.
+ * On a successful publish the app navigates to the new posting's detail view
+ * (`/job-postings/{id}`) — the form unmounts, so there is no in-place
+ * confirmation. Validation runs on blur and again on submit — never per
+ * keystroke — and every field error is `aria-describedby`-linked; a network /
+ * server failure shows the `--color-danger` banner with the entered values
+ * retained.
  */
 export function CreatePostingForm() {
-  const {
-    values,
-    fieldErrors,
-    formError,
-    published,
-    isSubmitting,
-    ids,
-    setField,
-    blurField,
-    handleSubmit,
-    reset,
-  } = useCreatePostingForm()
-
-  const confirmationRef = useRef<HTMLParagraphElement>(null)
-  const titleRef = useRef<HTMLInputElement>(null)
-  const hasPublished = useRef(false)
-
-  // Move focus onto the confirmation when the publish succeeds (so the removed
-  // Publish button does not strand keyboard focus, and the `role="status"` node
-  // is reliably announced); return it to the Title field on "Post another job".
-  useEffect(() => {
-    if (published) {
-      hasPublished.current = true
-      confirmationRef.current?.focus()
-    } else if (hasPublished.current) {
-      hasPublished.current = false
-      titleRef.current?.focus()
-    }
-  }, [published])
-
-  if (published) {
-    return (
-      <div className={styles.card}>
-        <p className={styles.confirmation} role="status" tabIndex={-1} ref={confirmationRef}>
-          Your job posting has been published.
-        </p>
-        <button type="button" className={styles.submit} onClick={reset}>
-          Post another job
-        </button>
-      </div>
-    )
-  }
+  const { values, fieldErrors, formError, isSubmitting, ids, setField, blurField, handleSubmit } =
+    useCreatePostingForm()
 
   return (
     <form className={styles.card} onSubmit={handleSubmit} noValidate>
@@ -76,7 +34,6 @@ export function CreatePostingForm() {
           id={ids.title}
           name="title"
           type="text"
-          ref={titleRef}
           maxLength={TITLE_MAX}
           className={
             fieldErrors.title ? `${styles.input} ${styles['input-invalid']}` : styles.input
