@@ -1,0 +1,1 @@
+export { PostingDetailPage } from './PostingDetailPage'

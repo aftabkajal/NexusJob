@@ -1,8 +1,9 @@
 import { useId, useState, type FormEvent } from 'react'
 
 import { useMutation } from '@tanstack/react-query'
+import { useNavigate } from 'react-router'
 
-import { jobPostingsClient } from '../../../entities'
+import { jobPostingsClient, type JobPostingResponse } from '../../../entities'
 import { toApiError } from '../../../shared/lib'
 
 type FieldName = 'title' | 'description'
@@ -55,32 +56,31 @@ function mapServerFieldErrors(errors: Record<string, string[]>): FieldErrors {
 
 /**
  * The Post-a-Job form state, mirroring `useAuthForm`: `values`, per-field
- * `fieldErrors`, a form-level `formError` banner, and a `published` flag that
- * swaps the form for the confirmation panel.
+ * `fieldErrors`, and a form-level `formError` banner.
  *
  * Validation runs on blur (per field) and again on submit — never per
  * keystroke; a stale error is cleared as the field is edited. On a successful
- * `create` the form is replaced by the confirmation in place (no navigation —
- * Story 2.2 owns the redirect to the posting's detail view). On a `400` with an
- * `errors` map the entries render under their fields; any other rejection shows
- * the banner with the entered values retained so a retry re-submits them.
+ * `create` the app navigates to `/job-postings/{new id}` — the form unmounts, so
+ * there is no in-place confirmation. On a `400` with an `errors` map the entries
+ * render under their fields; any other rejection shows the banner with the
+ * entered values retained so a retry re-submits them.
  */
 export function useCreatePostingForm() {
+  const navigate = useNavigate()
   const baseId = useId()
 
   const [values, setValues] = useState({ title: '', description: '' })
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const [formError, setFormError] = useState<string | undefined>(undefined)
-  const [published, setPublished] = useState(false)
 
   const mutation = useMutation({
-    mutationFn: (): Promise<unknown> =>
+    mutationFn: (): Promise<JobPostingResponse> =>
       jobPostingsClient.create({
         title: values.title.trim(),
         description: values.description.trim(),
       }),
-    onSuccess: () => {
-      setPublished(true)
+    onSuccess: (posting) => {
+      navigate(`/job-postings/${posting.id}`)
     },
     onError: (error: unknown) => {
       const apiError = toApiError(error)
@@ -125,19 +125,10 @@ export function useCreatePostingForm() {
     mutation.mutate()
   }
 
-  /** Clear everything — backs the confirmation panel's "Post another job". */
-  const reset = () => {
-    setValues({ title: '', description: '' })
-    setFieldErrors({})
-    setFormError(undefined)
-    setPublished(false)
-  }
-
   return {
     values,
     fieldErrors,
     formError,
-    published,
     isSubmitting: mutation.isPending,
     ids: {
       title: `${baseId}-title`,
@@ -147,6 +138,5 @@ export function useCreatePostingForm() {
     setField,
     blurField,
     handleSubmit,
-    reset,
   }
 }

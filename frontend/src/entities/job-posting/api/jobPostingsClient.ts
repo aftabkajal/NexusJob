@@ -3,6 +3,7 @@ import {
   callWithCsrfRetry,
   createHttp,
   type CreateJobPostingRequest,
+  type JobPostingDetailResponse,
   type JobPostingResponse,
 } from '../../../shared/api'
 
@@ -22,6 +23,12 @@ const rawClient = new JobPostingsClient('', createHttp())
 export const jobPostingsClient = {
   create: (body: CreateJobPostingRequest): Promise<JobPostingResponse> =>
     callWithCsrfRetry(() => rawClient.create(body)),
+  /**
+   * Read one posting's public detail. A `GET`, so no `callWithCsrfRetry`
+   * (mirroring `authClient.me`) — a `404` for a missing / mistyped id, or any
+   * other failure, propagates to the caller unchanged.
+   */
+  getById: (id: string): Promise<JobPostingDetailResponse> => rawClient.getById(id),
 }
 
-export type { CreateJobPostingRequest, JobPostingResponse }
+export type { CreateJobPostingRequest, JobPostingDetailResponse, JobPostingResponse }
