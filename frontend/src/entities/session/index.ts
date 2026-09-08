@@ -1,5 +1,5 @@
-// FSD `entities/session` — the signed-in viewer: the configured auth client, the
-// `me` query and its key, and the error normaliser every auth branch reads.
+// FSD `entities/session` — the signed-in viewer: the configured auth client and
+// the `me` query with its key. The `toApiError` / `ApiError` normaliser now
+// lives in `shared/lib` (a second slice consumes it).
 export { authClient } from './api/authClient'
-export { toApiError, type ApiError } from './api/toApiError'
 export { sessionQueryKey, useSession, type SessionViewer } from './model/sessionQuery'

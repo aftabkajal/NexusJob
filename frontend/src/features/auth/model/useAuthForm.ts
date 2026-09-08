@@ -3,7 +3,8 @@ import { useId, useState, type FormEvent } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router'
 
-import { authClient, sessionQueryKey, toApiError } from '../../../entities'
+import { authClient, sessionQueryKey } from '../../../entities'
+import { toApiError } from '../../../shared/lib'
 import type { Role } from '../../../shared/ui'
 
 export type AuthMode = 'signUp' | 'logIn'

@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { resetCsrfToken } from '../../../shared/api'
+
 import { authClient } from './authClient'
-import { resetCsrfToken } from './csrf'
 
 function jsonResponse(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), {
