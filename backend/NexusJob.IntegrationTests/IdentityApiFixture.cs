@@ -33,6 +33,13 @@ public sealed class IdentityApiFixture : IAsyncLifetime
         _factory ?? throw new InvalidOperationException("Fixture not initialized.");
 
     /// <summary>
+    /// The hosted app's root <see cref="IServiceProvider"/> - so a contract test
+    /// can resolve <c>IIdentityApi</c> / <c>IJobPostingsApi</c> from a scope
+    /// (spec 2.2a <c>ContractApiTests</c>).
+    /// </summary>
+    internal IServiceProvider Services => Factory.Services;
+
+    /// <summary>
     /// A cookie-handling client whose base address is <c>https://localhost</c>, so
     /// the <c>Secure</c> auth cookie (AD-13) is stored and replayed by the in-memory
     /// test server exactly as a browser would over TLS.

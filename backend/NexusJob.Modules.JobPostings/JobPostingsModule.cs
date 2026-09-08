@@ -5,7 +5,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using NexusJob.Modules.JobPostings.Auth;
+using NexusJob.Modules.JobPostings.Contracts;
 using NexusJob.Modules.JobPostings.Features.CreateJobPosting;
+using NexusJob.Modules.JobPostings.Features.GetJobPostingById;
 using NexusJob.Modules.JobPostings.Persistence;
 using Npgsql;
 
@@ -40,6 +42,11 @@ public static class JobPostingsModule
         services.AddScoped<AntiforgeryEndpointFilter>();
         services.AddScoped<CompanyOnlyEndpointFilter>();
         services.AddScoped<CreateJobPostingHandler>();
+        services.AddScoped<GetJobPostingByIdHandler>();
+
+        // JobPostings' cross-module read surface (AD-19), published for Epic 3
+        // consumers. Nothing consumes it yet (spec 2.2a: publish only).
+        services.AddScoped<IJobPostingsApi, JobPostingsApi>();
 
         return services;
     }
@@ -51,12 +58,19 @@ public static class JobPostingsModule
 
         var group = endpoints.MapGroup("/api/job-postings");
 
-        // Operation id drives the generated TypeScript client (AD-15): the
-        // "JobPostings_*" prefix makes NSwag emit one `JobPostingsClient` with a
-        // `create` method. Filter order: RequireAuthorization -> 401 for
-        // anonymous; CompanyOnly -> 403 for a signed-in non-Company; antiforgery
-        // -> 400 for a missing/invalid X-CSRF-TOKEN; DataAnnotations -> 400 for an
-        // empty/invalid body. The handler runs only when all four pass.
+        // Operation ids drive the generated TypeScript client (AD-15): the
+        // "JobPostings_*" prefix makes NSwag emit one `JobPostingsClient` with
+        // `create` / `getById` methods.
+        //
+        // POST filter order: RequireAuthorization -> 401 for anonymous;
+        // CompanyOnly -> 403 for a signed-in non-Company; antiforgery -> 400 for a
+        // missing/invalid X-CSRF-TOKEN; DataAnnotations -> 400 for an empty/invalid
+        // body. The handler runs only when all four pass.
+        //
+        // GET /{id:guid} is anonymous (AD-18 detail): no RequireAuthorization, no
+        // CompanyOnly, no antiforgery. The route constraint makes a non-GUID
+        // segment a routing 404; a well-formed unknown id is a 404 problem+json
+        // from the handler.
         group.MapPost("", CreateJobPostingEndpoint.Handle)
             .WithName("JobPostings_Create")
             .RequireAuthorization()
@@ -68,6 +82,13 @@ public static class JobPostingsModule
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status403Forbidden);
+
+        group.MapGet("/{id:guid}", GetJobPostingByIdEndpoint.Handle)
+            .WithName("JobPostings_GetById")
+            .AllowAnonymous()
+            .Produces<JobPostingDetailResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
 
         return endpoints;
     }

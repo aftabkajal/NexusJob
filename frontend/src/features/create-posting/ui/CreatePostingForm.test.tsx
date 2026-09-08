@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { createMemoryRouter, RouterProvider } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { jobPostingsClient } from '../../../entities'
@@ -21,11 +22,19 @@ function renderForm() {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   })
+  const router = createMemoryRouter(
+    [
+      { path: '/post-a-job', element: <CreatePostingForm /> },
+      { path: '/job-postings/:id', element: <div>posting-detail</div> },
+    ],
+    { initialEntries: ['/post-a-job'] },
+  )
   render(
     <QueryClientProvider client={queryClient}>
-      <CreatePostingForm />
+      <RouterProvider router={router} />
     </QueryClientProvider>,
   )
+  return router
 }
 
 beforeEach(() => {
@@ -115,29 +124,25 @@ describe('CreatePostingForm', () => {
     expect(create).not.toHaveBeenCalled()
   })
 
-  it('calls create with trimmed values and shows the confirmation on success; "Post another job" resets', async () => {
+  it('calls create with trimmed values and navigates to the new posting on success', async () => {
     const user = userEvent.setup()
     create.mockResolvedValue({
-      id: 'jp-1',
+      id: 'new-id',
       title: 'Staff Engineer',
       description: 'Build things.',
       createdAt: '2026-09-08T00:00:00Z',
     })
-    renderForm()
+    const router = renderForm()
 
     await user.type(screen.getByLabelText('Title'), '  Staff Engineer  ')
     await user.type(screen.getByLabelText('Description'), '  Build things.  ')
     await user.click(screen.getByRole('button', { name: 'Publish' }))
 
-    expect(await screen.findByRole('status')).toHaveTextContent(
-      'Your job posting has been published.',
+    await waitFor(() =>
+      expect(router.state.location.pathname).toBe('/job-postings/new-id'),
     )
     expect(create).toHaveBeenCalledWith({ title: 'Staff Engineer', description: 'Build things.' })
-    expect(screen.queryByLabelText('Title')).not.toBeInTheDocument()
-
-    await user.click(screen.getByRole('button', { name: 'Post another job' }))
-    expect(screen.getByLabelText('Title')).toHaveValue('')
-    expect(screen.getByLabelText('Description')).toHaveValue('')
+    expect(screen.getByText('posting-detail')).toBeInTheDocument()
   })
 
   it('does not fire a second create while the first request is in flight', async () => {
@@ -163,7 +168,7 @@ describe('CreatePostingForm', () => {
       description: 'Roadmap.',
       createdAt: '2026-09-08T00:00:00Z',
     })
-    renderForm()
+    const router = renderForm()
 
     await user.type(screen.getByLabelText('Title'), 'PM')
     await user.type(screen.getByLabelText('Description'), 'Roadmap.')
@@ -179,9 +184,7 @@ describe('CreatePostingForm', () => {
 
     await waitFor(() => expect(create).toHaveBeenCalledTimes(2))
     expect(create).toHaveBeenNthCalledWith(2, { title: 'PM', description: 'Roadmap.' })
-    expect(await screen.findByRole('status')).toHaveTextContent(
-      'Your job posting has been published.',
-    )
+    await waitFor(() => expect(router.state.location.pathname).toBe('/job-postings/jp-9'))
   })
 
   it('renders a server 400 field error under the Title field with no banner', async () => {

@@ -2,7 +2,13 @@ import '@fontsource-variable/inter'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { createBrowserRouter, RouterProvider, type RouteObject } from 'react-router'
 
-import { HomePage, NotFoundPage, PostAJobPage, SignInPage } from '../pages'
+import {
+  HomePage,
+  NotFoundPage,
+  PostAJobPage,
+  PostingDetailPage,
+  SignInPage,
+} from '../pages'
 import { Container } from '../shared/ui'
 import { AppShell } from '../widgets'
 
@@ -26,7 +32,8 @@ export function RouteError() {
 /**
  * Router shape: one layout route (`AppShell`) owns the chrome; child routes
  * render into its `<Outlet/>`. `/` → `HomePage`; `/sign-in` → `SignInPage`;
- * `/post-a-job` → `PostAJobPage` (guarded to a signed-in Company); anything
+ * `/post-a-job` → `PostAJobPage` (guarded to a signed-in Company);
+ * `/job-postings/:id` → `PostingDetailPage` (open to everyone); anything
  * else → `NotFoundPage`, still inside the shell. The Host serves
  * `index.html` for every non-`/api` path (story 1.1), so these client paths
  * resolve on a hard refresh.
@@ -44,6 +51,7 @@ export const routes: RouteObject[] = [
       { index: true, element: <HomePage /> },
       { path: 'sign-in', element: <SignInPage /> },
       { path: 'post-a-job', element: <PostAJobPage /> },
+      { path: 'job-postings/:id', element: <PostingDetailPage /> },
       { path: '*', element: <NotFoundPage /> },
     ],
   },

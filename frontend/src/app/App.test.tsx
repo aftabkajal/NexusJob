@@ -2,14 +2,22 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, RouterProvider } from 'react-router'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { authClient, sessionQueryKey, type SessionViewer } from '../entities'
+import { jobPostingsClient } from '../entities/job-posting/api/jobPostingsClient'
 
 import { routes } from './App'
 
-// Keep the real `entities` surface (queries, keys, `useSession`) but replace the
-// network-touching clients so a mounted `useSession()` never hits `window.fetch`.
+// Keep the real `entities` surface (queries, keys, `useSession`, `useJobPosting`)
+// but replace the network-touching clients so a mounted query never hits
+// `window.fetch`. `jobPostingsClient` is mocked at its own module so the real
+// `useJobPosting` queryFn (which imports it directly, not via the barrel) picks
+// the mock up too.
+vi.mock('../entities/job-posting/api/jobPostingsClient', () => ({
+  jobPostingsClient: { create: vi.fn(), getById: vi.fn() },
+}))
+
 vi.mock('../entities', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../entities')>()
   return {
@@ -20,8 +28,15 @@ vi.mock('../entities', async (importOriginal) => {
       login: vi.fn(),
       logout: vi.fn().mockResolvedValue(undefined),
     },
-    jobPostingsClient: { create: vi.fn() },
   }
+})
+
+const create = vi.mocked(jobPostingsClient.create)
+const getById = vi.mocked(jobPostingsClient.getById)
+
+beforeEach(() => {
+  create.mockReset()
+  getById.mockReset()
 })
 
 /**
@@ -39,7 +54,7 @@ function renderAt(path: string, session: SessionViewer | null = null) {
       <RouterProvider router={router} />
     </QueryClientProvider>,
   )
-  return { ...view, queryClient, invalidateSpy }
+  return { ...view, queryClient, invalidateSpy, router }
 }
 
 describe('App routing — anonymous viewer', () => {
@@ -197,5 +212,67 @@ describe('App routing — /post-a-job guard', () => {
       screen.getByRole('heading', { name: 'Find your next role. Post your next hire.' }),
     ).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Post a job' })).not.toBeInTheDocument()
+  })
+
+  it('navigates a Company to the new posting detail after a successful publish', async () => {
+    const user = userEvent.setup()
+    create.mockResolvedValue({
+      id: 'jp-777',
+      title: 'Staff Engineer',
+      description: 'Build the platform.',
+      createdAt: '2026-09-09T00:00:00Z',
+    })
+    getById.mockResolvedValue({
+      id: 'jp-777',
+      title: 'Staff Engineer',
+      description: 'Build the platform.',
+      companyName: 'Cobalt Ledger',
+    })
+    const { router } = renderAt('/post-a-job', {
+      kind: 'company',
+      id: 'c-1',
+      displayName: 'Cobalt Ledger',
+    })
+
+    await user.type(screen.getByLabelText('Title'), 'Staff Engineer')
+    await user.type(screen.getByLabelText('Description'), 'Build the platform.')
+    await user.click(screen.getByRole('button', { name: 'Publish' }))
+
+    await waitFor(() =>
+      expect(router.state.location.pathname).toBe('/job-postings/jp-777'),
+    )
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Staff Engineer' }),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('Your job posting has been published.')).not.toBeInTheDocument()
+  })
+})
+
+describe('App routing — /job-postings/:id detail surface', () => {
+  it('renders the posting detail card for a mocked getById, open to an anonymous viewer', async () => {
+    getById.mockResolvedValue({
+      id: 'jp-1',
+      title: 'Product Manager',
+      description: 'Own the roadmap.',
+      companyName: 'Cobalt Ledger',
+    })
+    renderAt('/job-postings/jp-1')
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Product Manager' }),
+    ).toBeInTheDocument()
+    expect(screen.getByText('Cobalt Ledger')).toBeInTheDocument()
+    expect(screen.getByText('Own the roadmap.')).toBeInTheDocument()
+    expect(getById).toHaveBeenCalledWith('jp-1')
+  })
+
+  it('shows "This posting is no longer available." for an unknown id', async () => {
+    getById.mockRejectedValue({ status: 404, title: 'Not Found' })
+    renderAt('/job-postings/does-not-exist')
+
+    expect(
+      await screen.findByText('This posting is no longer available.'),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Back to search' })).toHaveAttribute('href', '/')
   })
 })

@@ -6,7 +6,10 @@ export {
   type SessionViewer,
 } from './session'
 export {
+  jobPostingQueryKey,
   jobPostingsClient,
+  useJobPosting,
   type CreateJobPostingRequest,
+  type JobPostingDetailResponse,
   type JobPostingResponse,
 } from './job-posting'
