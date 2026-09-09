@@ -358,6 +358,57 @@ export class JobPostingsClient {
     }
 
     /**
+     * @param query (optional) 
+     * @param page (optional) 
+     * @param pageSize (optional) 
+     * @return OK
+     */
+    search(query: string | undefined, page: any | undefined, pageSize: any | undefined): Promise<PageOfJobPostingSearchResultResponse> {
+        let url_ = this.baseUrl + "/api/job-postings?";
+        if (query === null)
+            throw new globalThis.Error("The parameter 'query' cannot be null.");
+        else if (query !== undefined)
+            url_ += "query=" + encodeURIComponent("" + query) + "&";
+        if (page === null)
+            throw new globalThis.Error("The parameter 'page' cannot be null.");
+        else if (page !== undefined)
+            url_ += "page=" + encodeURIComponent("" + page) + "&";
+        if (pageSize === null)
+            throw new globalThis.Error("The parameter 'pageSize' cannot be null.");
+        else if (pageSize !== undefined)
+            url_ += "pageSize=" + encodeURIComponent("" + pageSize) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processSearch(_response);
+        });
+    }
+
+    protected processSearch(response: Response): Promise<PageOfJobPostingSearchResultResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as PageOfJobPostingSearchResultResponse;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<PageOfJobPostingSearchResultResponse>(null as any);
+    }
+
+    /**
      * @return OK
      */
     getById(id: string): Promise<JobPostingDetailResponse> {
@@ -448,10 +499,28 @@ export interface JobPostingResponse {
     [key: string]: any;
 }
 
+export interface JobPostingSearchResultResponse {
+    id: string;
+    title: string;
+    description: string;
+    companyName: string;
+
+    [key: string]: any;
+}
+
 export interface LoginRequest {
     accountType: string;
     email: string;
     password: string;
+
+    [key: string]: any;
+}
+
+export interface PageOfJobPostingSearchResultResponse {
+    items: JobPostingSearchResultResponse[];
+    page: any;
+    pageSize: any;
+    total: any;
 
     [key: string]: any;
 }
