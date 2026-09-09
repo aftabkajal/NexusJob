@@ -22,3 +22,24 @@ export function useJobPosting(id: string) {
     staleTime: Infinity,
   })
 }
+
+/**
+ * The search / browse-all query key, owned by this slice (AD-16):
+ * `['job-postings', 'search', query, page, pageSize]`.
+ */
+export const jobPostingSearchQueryKey = (query: string, page: number, pageSize: number) =>
+  ['job-postings', 'search', query, page, pageSize] as const
+
+/**
+ * Keyword search / browse-all over open postings. Runs unconditionally — an
+ * empty `query` is a real browse-all request (2.3a's "missing/empty query =
+ * browse everything" semantics), not a gate to skip the query. No
+ * `staleTime: Infinity` (unlike `useJobPosting`): new postings can appear
+ * between searches, so each distinct key refetches fresh.
+ */
+export function useJobPostingSearch(query: string, page: number, pageSize: number) {
+  return useQuery({
+    queryKey: jobPostingSearchQueryKey(query, page, pageSize),
+    queryFn: () => jobPostingsClient.search(query, page, pageSize),
+  })
+}

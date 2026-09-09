@@ -15,7 +15,7 @@ import { routes } from './App'
 // `useJobPosting` queryFn (which imports it directly, not via the barrel) picks
 // the mock up too.
 vi.mock('../entities/job-posting/api/jobPostingsClient', () => ({
-  jobPostingsClient: { create: vi.fn(), getById: vi.fn() },
+  jobPostingsClient: { create: vi.fn(), getById: vi.fn(), search: vi.fn() },
 }))
 
 vi.mock('../entities', async (importOriginal) => {
@@ -33,10 +33,17 @@ vi.mock('../entities', async (importOriginal) => {
 
 const create = vi.mocked(jobPostingsClient.create)
 const getById = vi.mocked(jobPostingsClient.getById)
+const search = vi.mocked(jobPostingsClient.search)
 
 beforeEach(() => {
   create.mockReset()
   getById.mockReset()
+  search.mockReset()
+  // Every mounted route can render the shell, and the shell's Home surface
+  // always runs a browse-all search — default it to an empty, resolved page
+  // so tests that don't care about Home's results (nav / auth / redirect
+  // checks) never crash on an unmocked `search()`.
+  search.mockResolvedValue({ items: [], page: 1, pageSize: 20, total: 0 })
 })
 
 /**
@@ -58,7 +65,7 @@ function renderAt(path: string, session: SessionViewer | null = null) {
 }
 
 describe('App routing — anonymous viewer', () => {
-  it('renders the shell and the Home landing surface at "/"', () => {
+  it('renders the shell and the Home landing surface at "/"', async () => {
     renderAt('/')
 
     expect(screen.getByRole('link', { name: 'NexusJob' })).toHaveAttribute('href', '/')
@@ -71,7 +78,10 @@ describe('App routing — anonymous viewer', () => {
     expect(
       screen.getByText('Browsing and searching do not require an account.'),
     ).toBeInTheDocument()
-    expect(screen.getByText('No open postings yet. Check back soon.')).toBeInTheDocument()
+    expect(
+      await screen.findByText('No open postings yet. Check back soon.'),
+    ).toBeInTheDocument()
+    expect(search).toHaveBeenCalledWith('', 1, 20)
   })
 
   it('renders the not-available surface inside the shell for an unknown path', () => {
