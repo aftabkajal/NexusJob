@@ -8,6 +8,7 @@ using NexusJob.Modules.JobPostings.Auth;
 using NexusJob.Modules.JobPostings.Contracts;
 using NexusJob.Modules.JobPostings.Features.CreateJobPosting;
 using NexusJob.Modules.JobPostings.Features.GetJobPostingById;
+using NexusJob.Modules.JobPostings.Features.SearchJobPostings;
 using NexusJob.Modules.JobPostings.Persistence;
 using Npgsql;
 
@@ -43,6 +44,7 @@ public static class JobPostingsModule
         services.AddScoped<CompanyOnlyEndpointFilter>();
         services.AddScoped<CreateJobPostingHandler>();
         services.AddScoped<GetJobPostingByIdHandler>();
+        services.AddScoped<SearchJobPostingsHandler>();
 
         // JobPostings' cross-module read surface (AD-19), published for Epic 3
         // consumers. Nothing consumes it yet (spec 2.2a: publish only).
@@ -67,10 +69,10 @@ public static class JobPostingsModule
         // missing/invalid X-CSRF-TOKEN; DataAnnotations -> 400 for an empty/invalid
         // body. The handler runs only when all four pass.
         //
-        // GET /{id:guid} is anonymous (AD-18 detail): no RequireAuthorization, no
-        // CompanyOnly, no antiforgery. The route constraint makes a non-GUID
-        // segment a routing 404; a well-formed unknown id is a 404 problem+json
-        // from the handler.
+        // GET /{id:guid} and GET "" (search) are anonymous (AD-18): no
+        // RequireAuthorization, no CompanyOnly, no antiforgery. The route
+        // constraint on /{id:guid} makes a non-GUID segment a routing 404; a
+        // well-formed unknown id is a 404 problem+json from the handler.
         group.MapPost("", CreateJobPostingEndpoint.Handle)
             .WithName("JobPostings_Create")
             .RequireAuthorization()
@@ -89,6 +91,11 @@ public static class JobPostingsModule
             .Produces<JobPostingDetailResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
+
+        group.MapGet("", SearchJobPostingsEndpoint.Handle)
+            .WithName("JobPostings_Search")
+            .AllowAnonymous()
+            .Produces<Page<JobPostingSearchResultResponse>>(StatusCodes.Status200OK);
 
         return endpoints;
     }

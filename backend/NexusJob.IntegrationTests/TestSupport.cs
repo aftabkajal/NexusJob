@@ -26,6 +26,20 @@ internal sealed record JobPostingDetailDto(
     [property: JsonPropertyName("description")] string Description,
     [property: JsonPropertyName("companyName")] string CompanyName);
 
+/// <summary>The <c>{ items, page, pageSize, total }</c> shape (AD-15) returned by any paginated-list endpoint.</summary>
+internal sealed record PageDto<T>(
+    [property: JsonPropertyName("items")] IReadOnlyList<T> Items,
+    [property: JsonPropertyName("page")] int Page,
+    [property: JsonPropertyName("pageSize")] int PageSize,
+    [property: JsonPropertyName("total")] int Total);
+
+/// <summary>One row of <c>GET /api/job-postings</c>'s search results: <c>{ id, title, description, companyName }</c>.</summary>
+internal sealed record JobPostingSearchResultDto(
+    [property: JsonPropertyName("id")] string Id,
+    [property: JsonPropertyName("title")] string Title,
+    [property: JsonPropertyName("description")] string Description,
+    [property: JsonPropertyName("companyName")] string CompanyName);
+
 /// <summary>The observed row shape of <c>job_postings.job_posting</c>.</summary>
 internal sealed record JobPostingRow(
     Guid Id,
@@ -313,4 +327,31 @@ internal sealed class AuthApiClient(HttpClient http)
     /// <summary>Same, but with a raw (possibly non-GUID) path segment for the routing-404 row.</summary>
     public Task<HttpResponseMessage> GetPostingRawAsync(string idSegment) =>
         http.GetAsync($"/api/job-postings/{idSegment}");
+
+    /// <summary>
+    /// <c>GET /api/job-postings?query=&amp;page=&amp;pageSize=</c> - anonymous
+    /// (AD-18): no antiforgery seed, no auth header. Every parameter is
+    /// optional; a <see langword="null"/> argument omits that query-string entry.
+    /// </summary>
+    public Task<HttpResponseMessage> SearchPostingsAsync(string? query = null, int? page = null, int? pageSize = null)
+    {
+        var parameters = new List<string>();
+        if (query is not null)
+        {
+            parameters.Add($"query={Uri.EscapeDataString(query)}");
+        }
+
+        if (page is not null)
+        {
+            parameters.Add($"page={page.Value}");
+        }
+
+        if (pageSize is not null)
+        {
+            parameters.Add($"pageSize={pageSize.Value}");
+        }
+
+        var queryString = parameters.Count == 0 ? string.Empty : $"?{string.Join('&', parameters)}";
+        return http.GetAsync($"/api/job-postings{queryString}");
+    }
 }

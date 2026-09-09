@@ -177,14 +177,78 @@ public sealed class OpenApiDocumentTests(IdentityApiFixture fixture)
             "'GET /api/job-postings/{id}' 404 is not a problem+json response.");
     }
 
-    private static IReadOnlyList<string> ResolveSchemaProperties(JsonElement root, JsonElement schema)
+    // ---- Row: Fetch the OpenAPI document -- GET /api/job-postings (spec 2.3a) --
+
+    [Fact]
+    public async Task Document_describes_the_job_postings_search_operation_with_its_query_params_and_200_shape()
+    {
+        using var client = fixture.CreateClient();
+
+        using var response = await client.GetAsync("/openapi/v1.json");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        await using var stream = await response.Content.ReadAsStreamAsync();
+        using var document = await JsonDocument.ParseAsync(stream);
+        var root = document.RootElement;
+
+        Assert.True(root.TryGetProperty("paths", out var paths));
+        Assert.True(
+            paths.TryGetProperty("/api/job-postings", out var pathItem),
+            "OpenAPI document is missing the '/api/job-postings' path.");
+        Assert.True(
+            pathItem.TryGetProperty("get", out var operation),
+            "'/api/job-postings' does not document a 'GET' operation.");
+
+        Assert.True(operation.TryGetProperty("operationId", out var operationId));
+        Assert.Equal("JobPostings_Search", operationId.GetString());
+
+        // query / page / pageSize are all optional query parameters.
+        Assert.True(operation.TryGetProperty("parameters", out var parameters));
+        foreach (var name in new[] { "query", "page", "pageSize" })
+        {
+            var parameter = parameters.EnumerateArray()
+                .FirstOrDefault(p => p.TryGetProperty("name", out var n) && n.GetString() == name);
+            Assert.True(
+                parameter.ValueKind != JsonValueKind.Undefined,
+                $"'GET /api/job-postings' does not document a '{name}' parameter.");
+            Assert.Equal("query", parameter.GetProperty("in").GetString());
+            var isRequired = parameter.TryGetProperty("required", out var requiredElement) && requiredElement.GetBoolean();
+            Assert.False(isRequired, $"'{name}' is documented as required; it must be optional.");
+        }
+
+        Assert.True(operation.TryGetProperty("responses", out var responses));
+        Assert.True(
+            responses.TryGetProperty("200", out _),
+            "'GET /api/job-postings' does not document a '200' response.");
+
+        // The 200 body is Page<JobPostingSearchResultResponse>: { items[], page, pageSize, total }.
+        var okSchema = responses.GetProperty("200")
+            .GetProperty("content").GetProperty("application/json").GetProperty("schema");
+        var schemaProperties = ResolveSchemaProperties(root, okSchema);
+        Assert.Equal(
+            ["items", "page", "pageSize", "total"],
+            schemaProperties.OrderBy(name => name, StringComparer.Ordinal));
+
+        // Each item in `items` is { id, title, description, companyName }.
+        var itemsSchema = ResolveSchema(root, okSchema).GetProperty("properties").GetProperty("items");
+        var itemSchema = itemsSchema.GetProperty("items");
+        var itemProperties = ResolveSchemaProperties(root, itemSchema);
+        Assert.Equal(
+            ["companyName", "description", "id", "title"],
+            itemProperties.OrderBy(name => name, StringComparer.Ordinal));
+    }
+
+    private static JsonElement ResolveSchema(JsonElement root, JsonElement schema)
     {
         if (schema.TryGetProperty("$ref", out var reference))
         {
             var name = reference.GetString()!.Split('/')[^1];
-            schema = root.GetProperty("components").GetProperty("schemas").GetProperty(name);
+            return root.GetProperty("components").GetProperty("schemas").GetProperty(name);
         }
 
-        return schema.GetProperty("properties").EnumerateObject().Select(p => p.Name).ToArray();
+        return schema;
     }
+
+    private static IReadOnlyList<string> ResolveSchemaProperties(JsonElement root, JsonElement schema) =>
+        ResolveSchema(root, schema).GetProperty("properties").EnumerateObject().Select(p => p.Name).ToArray();
 }
