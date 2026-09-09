@@ -1,0 +1,9 @@
+# Keep the dev-image build context small and deterministic.
+**/node_modules/
+**/dist/
+**/dist-ssr/
+.git/
+**/.env
+**/.env.*
+**/*.tsbuildinfo
+**/.eslintcache

@@ -5,14 +5,15 @@ import { defineConfig } from 'vite'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  // `npm run dev` serves the SPA; `/api/*` is proxied to the Host's plain-HTTP
-  // `launchSettings` URL. The auth cookie is `Secure`, but browsers treat
-  // `localhost` as a secure context over plain HTTP, so it still round-trips
-  // through the Vite origin. `docker compose` needs no proxy (Host serves the
-  // built SPA same-origin).
+  // `npm run dev` serves the SPA; `/api/*` is proxied to the Host. The auth
+  // cookie is `Secure`, but browsers treat `localhost` as a secure context
+  // over plain HTTP, so it still round-trips through the Vite origin.
+  // `docker compose up` (no dev profile) needs no proxy (Host serves the
+  // built SPA same-origin); the `dev` profile's `frontend` container sets
+  // API_PROXY_TARGET to reach the `backend` container by service name.
   server: {
     proxy: {
-      '/api': { target: 'http://localhost:2052', changeOrigin: true },
+      '/api': { target: process.env.API_PROXY_TARGET ?? 'http://localhost:2052', changeOrigin: true },
     },
   },
   test: {

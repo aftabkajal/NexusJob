@@ -1,0 +1,6 @@
+# Keep the dev-image build context small and deterministic.
+**/bin/
+**/obj/
+**/.vs/
+**/*.user
+.git/

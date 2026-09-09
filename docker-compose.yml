@@ -1,4 +1,12 @@
 # Local stack (AR-14): one app container serving API + SPA, one PostgreSQL 18.
+# `app` is the same-origin production-shaped image (AD-12) and is smoke-tested
+# by CI — it always starts with a plain `docker compose up`, unchanged below.
+#
+# `frontend`/`backend` are opt-in hot-reload dev services (profile "dev"),
+# each built from its own Dockerfile, for working on the two sides
+# independently: `docker compose --profile dev up`. They run alongside `app`
+# rather than replacing it (different ports), so either workflow — or both at
+# once — works.
 services:
   app:
     build:
@@ -22,6 +30,57 @@ services:
       retries: 6
       start_period: 20s
 
+  backend:
+    profiles: ["dev"]
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      # ASPNETCORE_URLS/DOTNET_USE_POLLING_FILE_WATCHER live in backend/Dockerfile;
+      # only the compose-specific connection string is set here.
+      ConnectionStrings__Postgres: "Host=postgres;Port=5432;Database=nexusjob;Username=nexusjob;Password=nexusjob_local_dev;Timeout=3;Command Timeout=3"
+    ports:
+      - "2052:2052"
+    volumes:
+      - ./backend:/src
+      # Anonymous volumes so each project's bin/obj stay container-native
+      # instead of the host's (Windows) build output leaking in over the bind mount.
+      - /src/NexusJob.Host/bin
+      - /src/NexusJob.Host/obj
+      - /src/NexusJob.Modules.Identity/bin
+      - /src/NexusJob.Modules.Identity/obj
+      - /src/NexusJob.Modules.Identity.Contracts/bin
+      - /src/NexusJob.Modules.Identity.Contracts/obj
+      - /src/NexusJob.Modules.JobPostings/bin
+      - /src/NexusJob.Modules.JobPostings/obj
+      - /src/NexusJob.Modules.JobPostings.Contracts/bin
+      - /src/NexusJob.Modules.JobPostings.Contracts/obj
+      - /src/NexusJob.Modules.Applications/bin
+      - /src/NexusJob.Modules.Applications/obj
+      - /src/NexusJob.Modules.Applications.Contracts/bin
+      - /src/NexusJob.Modules.Applications.Contracts/obj
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    profiles: ["dev"]
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    environment:
+      # Points the Vite proxy (frontend/vite.config.ts) at the backend
+      # container instead of its localhost:2052 default. CHOKIDAR_USEPOLLING
+      # lives in frontend/Dockerfile.
+      API_PROXY_TARGET: "http://backend:2052"
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - frontend-node-modules:/app/node_modules
+    depends_on:
+      - backend
+
   postgres:
     image: postgres:18
     environment:
@@ -42,3 +101,4 @@ services:
 
 volumes:
   postgres-data:
+  frontend-node-modules:
