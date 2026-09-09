@@ -5,6 +5,8 @@ import {
   type CreateJobPostingRequest,
   type JobPostingDetailResponse,
   type JobPostingResponse,
+  type JobPostingSearchResultResponse,
+  type PageOfJobPostingSearchResultResponse,
 } from '../../../shared/api'
 
 /**
@@ -29,6 +31,26 @@ export const jobPostingsClient = {
    * other failure, propagates to the caller unchanged.
    */
   getById: (id: string): Promise<JobPostingDetailResponse> => rawClient.getById(id),
+  /**
+   * Keyword search / browse-all over open postings. A `GET`, so no
+   * `callWithCsrfRetry`. The generated `JobPostingsClient.search`'s `page` /
+   * `pageSize` params are typed `any` — NSwag couldn't infer `integer` from the
+   * OpenAPI schema for a plain `int` property (a known, deferred, pre-existing
+   * gap; see `deferred-work.md`). This wrapper re-types both as `number` so
+   * every caller in the app gets real typing without touching the generated
+   * file.
+   */
+  search: (
+    query: string,
+    page: number,
+    pageSize: number,
+  ): Promise<PageOfJobPostingSearchResultResponse> => rawClient.search(query, page, pageSize),
 }
 
-export type { CreateJobPostingRequest, JobPostingDetailResponse, JobPostingResponse }
+export type {
+  CreateJobPostingRequest,
+  JobPostingDetailResponse,
+  JobPostingResponse,
+  JobPostingSearchResultResponse,
+  PageOfJobPostingSearchResultResponse,
+}

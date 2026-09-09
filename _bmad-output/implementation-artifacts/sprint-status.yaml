@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 09-05-2026 23:57
-last_updated: 09-10-2026 00:30
+last_updated: 09-10-2026 02:47
 project: NexusJobBmad
 project_key: NOKEY
 tracking_system: file-system
@@ -45,7 +45,7 @@ development_status:
   epic-2: in-progress
   2-1-create-a-job-posting: review  # split: 2.1a JobPostings module + POST /api/job-postings (backend) and 2.1b Post-a-Job frontend surface both DONE + reviewed under this key
   2-2-view-a-job-posting-s-detail: review  # split: 2.2a backend (IIdentityApi + IJobPostingsApi contracts, GET /api/job-postings/{id}) and 2.2b (detail surface + publish redirect) both DONE + reviewed under this key
-  2-3-search-job-postings-by-keyword: review
+  2-3-search-job-postings-by-keyword: review  # split: 2.3a search endpoint (backend) and 2.3b Home search/browse surface (frontend) both DONE + reviewed under this key
   epic-2-retrospective: optional
 
   epic-3: backlog
