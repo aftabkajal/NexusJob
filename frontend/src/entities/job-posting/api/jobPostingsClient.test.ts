@@ -158,3 +158,53 @@ describe('jobPostingsClient.getById', () => {
     expect(urlOf(0)).toBe('/api/job-postings/missing')
   })
 })
+
+describe('jobPostingsClient.search', () => {
+  it('issues GET /api/job-postings with the three params and resolves the PageOfJobPostingSearchResultResponse', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(200, {
+        items: [
+          {
+            id: 'jp-1',
+            title: 'Staff Engineer',
+            description: 'Build the platform.',
+            companyName: 'Cobalt Ledger',
+          },
+        ],
+        page: 1,
+        pageSize: 20,
+        total: 1,
+      }),
+    )
+
+    const result = await jobPostingsClient.search('engineer', 1, 20)
+
+    expect(result).toEqual({
+      items: [
+        {
+          id: 'jp-1',
+          title: 'Staff Engineer',
+          description: 'Build the platform.',
+          companyName: 'Cobalt Ledger',
+        },
+      ],
+      page: 1,
+      pageSize: 20,
+      total: 1,
+    })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(urlOf(0)).toBe('/api/job-postings?query=engineer&page=1&pageSize=20')
+    expect((initOf(0).method ?? 'GET').toUpperCase()).toBe('GET')
+    expect(headerOf(0, 'X-CSRF-TOKEN')).toBeNull()
+  })
+
+  it('runs a browse-all search with an empty query, with no CSRF seed or retry', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, { items: [], page: 1, pageSize: 20, total: 0 }))
+
+    const result = await jobPostingsClient.search('', 1, 20)
+
+    expect(result).toEqual({ items: [], page: 1, pageSize: 20, total: 0 })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(urlOf(0)).toBe('/api/job-postings?query=&page=1&pageSize=20')
+  })
+})
