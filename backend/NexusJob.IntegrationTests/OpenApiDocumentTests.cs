@@ -238,6 +238,114 @@ public sealed class OpenApiDocumentTests(IdentityApiFixture fixture)
             itemProperties.OrderBy(name => name, StringComparer.Ordinal));
     }
 
+    // ---- Row: Fetch the OpenAPI document -- POST /api/applications (spec 3.1a) --
+
+    [Fact]
+    public async Task Document_describes_the_applications_create_operation_with_its_200_shape_and_problem_responses()
+    {
+        using var client = fixture.CreateClient();
+
+        using var response = await client.GetAsync("/openapi/v1.json");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        await using var stream = await response.Content.ReadAsStreamAsync();
+        using var document = await JsonDocument.ParseAsync(stream);
+        var root = document.RootElement;
+
+        Assert.True(root.TryGetProperty("paths", out var paths));
+        Assert.True(
+            paths.TryGetProperty("/api/applications", out var pathItem),
+            "OpenAPI document is missing the '/api/applications' path.");
+        Assert.True(
+            pathItem.TryGetProperty("post", out var operation),
+            "'/api/applications' does not document a 'POST' operation.");
+
+        Assert.True(operation.TryGetProperty("operationId", out var operationId));
+        Assert.Equal("Applications_Create", operationId.GetString());
+
+        // The request body is CreateApplicationRequest { jobPostingId }.
+        var requestSchema = operation.GetProperty("requestBody")
+            .GetProperty("content").GetProperty("application/json").GetProperty("schema");
+        Assert.Equal(["jobPostingId"], ResolveSchemaProperties(root, requestSchema));
+
+        Assert.True(operation.TryGetProperty("responses", out var responses));
+        foreach (var statusCode in new[] { "200", "400", "401", "403", "404" })
+        {
+            Assert.True(
+                responses.TryGetProperty(statusCode, out _),
+                $"'POST /api/applications' does not document a '{statusCode}' response.");
+        }
+
+        // The 200 body is the { id, jobPostingId, submittedAt } representation.
+        var okSchema = responses.GetProperty("200")
+            .GetProperty("content").GetProperty("application/json").GetProperty("schema");
+        Assert.Equal(
+            ["id", "jobPostingId", "submittedAt"],
+            ResolveSchemaProperties(root, okSchema).OrderBy(name => name, StringComparer.Ordinal));
+
+        // 4xx responses are RFC 9457 ProblemDetails (the 404 is the unknown-posting case).
+        foreach (var statusCode in new[] { "400", "401", "403", "404" })
+        {
+            Assert.True(
+                responses.GetProperty(statusCode).GetProperty("content")
+                    .TryGetProperty("application/problem+json", out _),
+                $"'POST /api/applications' {statusCode} is not a problem+json response.");
+        }
+    }
+
+    // ---- Row: Fetch the OpenAPI document -- GET /api/applications/mine (spec 3.1a) --
+
+    [Fact]
+    public async Task Document_describes_the_applications_get_mine_operation_with_its_required_query_param_and_200_shape()
+    {
+        using var client = fixture.CreateClient();
+
+        using var response = await client.GetAsync("/openapi/v1.json");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        await using var stream = await response.Content.ReadAsStreamAsync();
+        using var document = await JsonDocument.ParseAsync(stream);
+        var root = document.RootElement;
+
+        Assert.True(root.TryGetProperty("paths", out var paths));
+        Assert.True(
+            paths.TryGetProperty("/api/applications/mine", out var pathItem),
+            "OpenAPI document is missing the '/api/applications/mine' path.");
+        Assert.True(
+            pathItem.TryGetProperty("get", out var operation),
+            "'/api/applications/mine' does not document a 'GET' operation.");
+
+        Assert.True(operation.TryGetProperty("operationId", out var operationId));
+        Assert.Equal("Applications_GetMine", operationId.GetString());
+
+        // jobPostingId is a required query parameter.
+        Assert.True(operation.TryGetProperty("parameters", out var parameters));
+        var jobPostingId = parameters.EnumerateArray()
+            .FirstOrDefault(p => p.TryGetProperty("name", out var n) && n.GetString() == "jobPostingId");
+        Assert.True(
+            jobPostingId.ValueKind != JsonValueKind.Undefined,
+            "'GET /api/applications/mine' does not document a 'jobPostingId' parameter.");
+        Assert.Equal("query", jobPostingId.GetProperty("in").GetString());
+        Assert.True(
+            jobPostingId.TryGetProperty("required", out var requiredElement) && requiredElement.GetBoolean(),
+            "'jobPostingId' must be documented as a required query parameter.");
+
+        Assert.True(operation.TryGetProperty("responses", out var responses));
+        foreach (var statusCode in new[] { "200", "400", "401", "403" })
+        {
+            Assert.True(
+                responses.TryGetProperty(statusCode, out _),
+                $"'GET /api/applications/mine' does not document a '{statusCode}' response.");
+        }
+
+        // The 200 body is MyApplicationResponse { applied, appliedAt }.
+        var okSchema = responses.GetProperty("200")
+            .GetProperty("content").GetProperty("application/json").GetProperty("schema");
+        Assert.Equal(
+            ["applied", "appliedAt"],
+            ResolveSchemaProperties(root, okSchema).OrderBy(name => name, StringComparer.Ordinal));
+    }
+
     private static JsonElement ResolveSchema(JsonElement root, JsonElement schema)
     {
         if (schema.TryGetProperty("$ref", out var reference))

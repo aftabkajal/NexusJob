@@ -48,6 +48,17 @@ internal sealed record JobPostingRow(
     string Description,
     DateTimeOffset CreatedAt);
 
+/// <summary>The <c>{ id, jobPostingId, submittedAt }</c> representation returned by <c>POST /api/applications</c>.</summary>
+internal sealed record ApplicationDto(
+    [property: JsonPropertyName("id")] string Id,
+    [property: JsonPropertyName("jobPostingId")] string JobPostingId,
+    [property: JsonPropertyName("submittedAt")] DateTimeOffset SubmittedAt);
+
+/// <summary>The <c>{ applied, appliedAt }</c> shape returned by <c>GET /api/applications/mine</c>.</summary>
+internal sealed record MyApplicationDto(
+    [property: JsonPropertyName("applied")] bool Applied,
+    [property: JsonPropertyName("appliedAt")] DateTimeOffset? AppliedAt);
+
 /// <summary>The observed shape of <c>identity.job_seeker_account</c> after the migration.</summary>
 internal sealed record JobSeekerAccountSchema(
     IReadOnlyList<(string Name, string DataType, bool NotNull)> Columns,
@@ -257,6 +268,100 @@ internal sealed class JobPostingsDatabase(string connectionString)
 }
 
 /// <summary>
+/// Direct read-only SQL against the Testcontainer for the <c>applications</c>
+/// schema, so assertions on rows never go through an Applications module type
+/// (which is <c>internal</c> and unreferenced anyway).
+/// </summary>
+internal sealed class ApplicationsDatabase(string connectionString)
+{
+    public async Task<int> CountApplicationsForPostingAsync(Guid postingId)
+    {
+        await using var connection = new NpgsqlConnection(connectionString);
+        await connection.OpenAsync();
+        await using var command = new NpgsqlCommand(
+            "SELECT count(*) FROM applications.application WHERE job_posting_id = @posting", connection);
+        command.Parameters.AddWithValue("posting", postingId);
+        return Convert.ToInt32(await command.ExecuteScalarAsync());
+    }
+
+    public async Task<int> CountApplicationsForSeekerAsync(Guid seekerId)
+    {
+        await using var connection = new NpgsqlConnection(connectionString);
+        await connection.OpenAsync();
+        await using var command = new NpgsqlCommand(
+            "SELECT count(*) FROM applications.application WHERE job_seeker_id = @seeker", connection);
+        command.Parameters.AddWithValue("seeker", seekerId);
+        return Convert.ToInt32(await command.ExecuteScalarAsync());
+    }
+
+    public async Task<(Guid Id, DateTimeOffset SubmittedAt)?> GetApplicationRowAsync(Guid postingId, Guid seekerId)
+    {
+        await using var connection = new NpgsqlConnection(connectionString);
+        await connection.OpenAsync();
+        await using var command = new NpgsqlCommand(
+            "SELECT id, submitted_at FROM applications.application " +
+            "WHERE job_posting_id = @posting AND job_seeker_id = @seeker", connection);
+        command.Parameters.AddWithValue("posting", postingId);
+        command.Parameters.AddWithValue("seeker", seekerId);
+        await using var reader = await command.ExecuteReaderAsync();
+        if (!await reader.ReadAsync())
+        {
+            return null;
+        }
+
+        return (reader.GetGuid(0), reader.GetFieldValue<DateTimeOffset>(1));
+    }
+
+    /// <summary>
+    /// Probes <c>information_schema</c> for whether the observed columns of
+    /// <c>applications.application</c> match the four expected ones (name +
+    /// nullability), plus whether a unique index covers exactly
+    /// <c>(job_posting_id, job_seeker_id)</c> in that order.
+    /// </summary>
+    public async Task<(IReadOnlyList<(string Name, string DataType, bool NotNull)> Columns, bool HasUniquePairIndex)> GetApplicationSchemaAsync()
+    {
+        await using var connection = new NpgsqlConnection(connectionString);
+        await connection.OpenAsync();
+
+        var columns = new List<(string Name, string DataType, bool NotNull)>();
+        await using (var command = new NpgsqlCommand(
+            """
+            SELECT column_name, data_type, is_nullable
+            FROM information_schema.columns
+            WHERE table_schema = 'applications' AND table_name = 'application'
+            ORDER BY column_name
+            """, connection))
+        await using (var reader = await command.ExecuteReaderAsync())
+        {
+            while (await reader.ReadAsync())
+            {
+                columns.Add((reader.GetString(0), reader.GetString(1),
+                    string.Equals(reader.GetString(2), "NO", StringComparison.OrdinalIgnoreCase)));
+            }
+        }
+
+        bool hasUniquePairIndex;
+        await using (var command = new NpgsqlCommand(
+            """
+            SELECT count(*)
+            FROM pg_index i
+            JOIN pg_class t ON t.oid = i.indrelid
+            JOIN pg_namespace n ON n.oid = t.relnamespace
+            JOIN pg_attribute a1 ON a1.attrelid = t.oid AND a1.attnum = i.indkey[0]
+            JOIN pg_attribute a2 ON a2.attrelid = t.oid AND a2.attnum = i.indkey[1]
+            WHERE n.nspname = 'applications' AND t.relname = 'application'
+              AND i.indisunique AND i.indnatts = 2
+              AND a1.attname = 'job_posting_id' AND a2.attname = 'job_seeker_id'
+            """, connection))
+        {
+            hasUniquePairIndex = Convert.ToInt32(await command.ExecuteScalarAsync()) >= 1;
+        }
+
+        return (columns, hasUniquePairIndex);
+    }
+}
+
+/// <summary>
 /// Wraps an <see cref="HttpClient"/> with the antiforgery double-submit dance:
 /// seed the token from <c>GET /api/auth/csrf</c> (which also sets the antiforgery
 /// cookie in this client's cookie container) and send it back in
@@ -353,5 +458,34 @@ internal sealed class AuthApiClient(HttpClient http)
 
         var queryString = parameters.Count == 0 ? string.Empty : $"?{string.Join('&', parameters)}";
         return http.GetAsync($"/api/job-postings{queryString}");
+    }
+
+    /// <summary>
+    /// <c>POST /api/applications</c> with a freshly seeded antiforgery token (the
+    /// same seeding <see cref="RegisterAsync"/> does). Use the
+    /// <paramref name="csrfToken"/> overload to send a specific token or
+    /// <c>null</c> (the missing-token I/O-matrix row).
+    /// </summary>
+    public async Task<HttpResponseMessage> ApplyAsync(string jobPostingId)
+    {
+        var token = await GetCsrfTokenAsync();
+        return await ApplyAsync(jobPostingId, token);
+    }
+
+    public Task<HttpResponseMessage> ApplyAsync(string jobPostingId, string? csrfToken) =>
+        PostAsync("/api/applications", new { jobPostingId }, csrfToken);
+
+    /// <summary>
+    /// <c>GET /api/applications/mine?jobPostingId=</c> - a Job Seeker read (AD-20):
+    /// no antiforgery seed (GET). The client's cookie container is used as-is. A
+    /// <see langword="null"/> <paramref name="jobPostingId"/> omits the query-string
+    /// entry (the missing-param I/O-matrix row).
+    /// </summary>
+    public Task<HttpResponseMessage> GetMyApplicationAsync(string? jobPostingId)
+    {
+        var queryString = jobPostingId is null
+            ? string.Empty
+            : $"?jobPostingId={Uri.EscapeDataString(jobPostingId)}";
+        return http.GetAsync($"/api/applications/mine{queryString}");
     }
 }

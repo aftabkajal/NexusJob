@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using NexusJob.Host.Persistence;
 using NexusJob.Modules.Applications;
+using NexusJob.Modules.Applications.Persistence;
 using NexusJob.Modules.Identity;
 using NexusJob.Modules.Identity.Auth;
 using NexusJob.Modules.Identity.Persistence;
@@ -136,6 +137,7 @@ using (var migrationScope = app.Services.CreateScope())
         migrationScope.ServiceProvider.GetRequiredService<IdentityDbContext>().Database.Migrate();
         migrationScope.ServiceProvider.GetRequiredService<DataProtectionKeysDbContext>().Database.Migrate();
         migrationScope.ServiceProvider.GetRequiredService<JobPostingsDbContext>().Database.Migrate();
+        migrationScope.ServiceProvider.GetRequiredService<ApplicationsDbContext>().Database.Migrate();
     }
     catch (Exception migrationException)
     {

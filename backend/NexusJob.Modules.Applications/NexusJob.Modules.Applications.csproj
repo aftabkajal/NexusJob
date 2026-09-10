@@ -1,9 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    Applications bounded-context module. Story 1.1: wiring-only stub. May
-    reference other modules' *.Contracts only (AD-1); only the Host references
-    this project (AD-10).
+    Applications bounded-context module (AD-4). Story 3.1a: its own
+    applications-schema persistence, the POST /api/applications apply endpoint and
+    the GET /api/applications/mine probe. May reference other modules' *.Contracts
+    only (AD-1); only the Host references this project (AD-10).
   -->
   <PropertyGroup>
     <RootNamespace>NexusJob.Modules.Applications</RootNamespace>
@@ -14,7 +15,26 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Applications owns its own applications-schema persistence and migration history (AD-5, AD-7). -->
+    <PackageReference Include="Npgsql" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\NexusJob.Modules.Applications.Contracts\NexusJob.Modules.Applications.Contracts.csproj" />
+    <!--
+      The apply handler checks the target posting exists through JobPostings'
+      published Contract (IJobPostingsApi.GetPostingOwner, AD-9 / AD-19), never
+      the job_postings schema. A .Contracts reference only - the ArchUnitNET
+      boundary gates permit any *.Contracts edge. Applications publishes no
+      cross-module contract this epic (no IApplicationsApi).
+    -->
+    <ProjectReference Include="..\NexusJob.Modules.JobPostings.Contracts\NexusJob.Modules.JobPostings.Contracts.csproj" />
   </ItemGroup>
 
 </Project>
