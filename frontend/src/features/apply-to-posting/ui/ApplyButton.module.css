@@ -1,0 +1,73 @@
+/*
+ * Apply surface — the single primary action on the posting detail page. Every
+ * value is a design token (tokens gate).
+ *
+ * `.apply` is `CreatePostingForm.module.css .submit` minus `width: 100%` /
+ * `margin-top`: the accent fill, `--radius-md`, `--space-3 --space-5` padding,
+ * `--text-label-*`. `.apply:disabled` `opacity` is only the transient pending
+ * look. `.applied` is the DESIGN `apply-button` disabled pair — `--color-border`
+ * background, `--color-text-secondary` label — a styled disabled state, not an
+ * `opacity` dim. `.confirmation` mirrors `.banner`'s box in the success pair.
+ */
+
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: flex-start;
+}
+
+.apply {
+  padding: var(--space-3) var(--space-5);
+  color: var(--color-accent-foreground);
+  background-color: var(--color-accent);
+  border: 0;
+  border-radius: var(--radius-md);
+  font-family: var(--font-family);
+  font-size: var(--text-label-size);
+  font-weight: var(--text-label-weight);
+  line-height: var(--text-label-line);
+  letter-spacing: var(--text-label-tracking);
+  cursor: pointer;
+}
+
+.apply:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.applied {
+  padding: var(--space-3) var(--space-5);
+  color: var(--color-text-secondary);
+  background-color: var(--color-border);
+  border: 0;
+  border-radius: var(--radius-md);
+  font-family: var(--font-family);
+  font-size: var(--text-label-size);
+  font-weight: var(--text-label-weight);
+  line-height: var(--text-label-line);
+  letter-spacing: var(--text-label-tracking);
+  cursor: default;
+}
+
+.banner {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  color: var(--color-danger);
+  background-color: var(--color-danger-subtle);
+  border-radius: var(--radius-md);
+  font-size: var(--text-body-sm-size);
+  font-weight: var(--text-body-sm-weight);
+  line-height: var(--text-body-sm-line);
+}
+
+.confirmation {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  color: var(--color-success);
+  background-color: var(--color-success-subtle);
+  border-radius: var(--radius-md);
+  font-size: var(--text-body-sm-size);
+  font-weight: var(--text-body-sm-weight);
+  line-height: var(--text-body-sm-line);
+}

@@ -1,5 +1,13 @@
 // FSD `entities` layer: domain nouns with their query keys and API segments.
 export {
+  applicationMineQueryKey,
+  applicationsClient,
+  useMyApplication,
+  type ApplicationResponse,
+  type CreateApplicationRequest,
+  type MyApplicationResponse,
+} from './application'
+export {
   authClient,
   sessionQueryKey,
   useSession,
