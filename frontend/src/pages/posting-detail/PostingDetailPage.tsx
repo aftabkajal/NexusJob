@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react'
 import { Link, Navigate, useParams } from 'react-router'
 
 import { useJobPosting } from '../../entities'
+import { ApplyButton } from '../../features'
 import { toApiError } from '../../shared/lib'
 
 import styles from './PostingDetailPage.module.css'
@@ -93,6 +94,7 @@ function PostingDetail({ id }: { id: string }) {
       </h1>
       <p className={styles.company}>{posting.companyName}</p>
       <p className={styles.description}>{posting.description}</p>
+      <ApplyButton key={posting.id} jobPostingId={posting.id} />
     </article>
   )
 }
