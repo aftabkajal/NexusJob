@@ -5,17 +5,22 @@ import { createMemoryRouter, RouterProvider } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { authClient, sessionQueryKey, type SessionViewer } from '../entities'
+import { applicationsClient } from '../entities/application/api/applicationsClient'
 import { jobPostingsClient } from '../entities/job-posting/api/jobPostingsClient'
 
 import { routes } from './App'
 
 // Keep the real `entities` surface (queries, keys, `useSession`, `useJobPosting`)
 // but replace the network-touching clients so a mounted query never hits
-// `window.fetch`. `jobPostingsClient` is mocked at its own module so the real
-// `useJobPosting` queryFn (which imports it directly, not via the barrel) picks
-// the mock up too.
+// `window.fetch`. `jobPostingsClient` and `applicationsClient` are mocked at
+// their own modules so the real `useJobPosting` / `useMyApplications` queryFns
+// (which import them directly, not via the barrel) pick the mocks up too.
 vi.mock('../entities/job-posting/api/jobPostingsClient', () => ({
   jobPostingsClient: { create: vi.fn(), getById: vi.fn(), search: vi.fn() },
+}))
+
+vi.mock('../entities/application/api/applicationsClient', () => ({
+  applicationsClient: { apply: vi.fn(), getMine: vi.fn(), getMyApplications: vi.fn() },
 }))
 
 vi.mock('../entities', async (importOriginal) => {
@@ -34,11 +39,13 @@ vi.mock('../entities', async (importOriginal) => {
 const create = vi.mocked(jobPostingsClient.create)
 const getById = vi.mocked(jobPostingsClient.getById)
 const search = vi.mocked(jobPostingsClient.search)
+const getMyApplications = vi.mocked(applicationsClient.getMyApplications)
 
 beforeEach(() => {
   create.mockReset()
   getById.mockReset()
   search.mockReset()
+  getMyApplications.mockReset()
   // Every mounted route can render the shell, and the shell's Home surface
   // always runs a browse-all search — default it to an empty, resolved page
   // so tests that don't care about Home's results (nav / auth / redirect
@@ -125,16 +132,19 @@ describe('App routing — signed-in Job Seeker viewer', () => {
     ).not.toBeInTheDocument()
   })
 
-  it('shows the signed-in nav (Search + display name + Log out, no role-only links)', () => {
+  it('shows the signed-in nav (Search + My Applications + display name + Log out)', () => {
     renderAt('/', { kind: 'jobSeeker', id: 'js-1', displayName: 'Priya Raman' })
 
     const nav = screen.getByRole('navigation', { name: 'Primary' })
     expect(nav).toHaveTextContent('Search')
+    expect(screen.getByRole('link', { name: 'My Applications' })).toHaveAttribute(
+      'href',
+      '/my-applications',
+    )
     expect(nav).toHaveTextContent('Priya Raman')
     expect(screen.getByRole('button', { name: 'Log out' })).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Post a Job' })).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'My Postings' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('link', { name: 'My Applications' })).not.toBeInTheDocument()
   })
 })
 
@@ -159,6 +169,7 @@ describe('App routing — signed-in Company viewer', () => {
     expect(nav).toHaveTextContent('Cobalt Ledger')
     expect(screen.getByRole('button', { name: 'Log out' })).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'My Postings' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'My Applications' })).not.toBeInTheDocument()
   })
 
   it('logs out: calls authClient.logout and invalidates the session query', async () => {
@@ -284,5 +295,49 @@ describe('App routing — /job-postings/:id detail surface', () => {
       await screen.findByText('This posting is no longer available.'),
     ).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Back to search' })).toHaveAttribute('href', '/')
+  })
+})
+
+describe('App routing — /my-applications guard', () => {
+  it('renders the list for a signed-in Job Seeker', async () => {
+    getMyApplications.mockResolvedValue({
+      items: [
+        {
+          applicationId: 'app-1',
+          jobPostingId: 'jp-1',
+          jobPostingTitle: 'Staff Engineer',
+          submittedAt: '2026-09-11T00:00:00Z',
+        },
+      ],
+      page: 1,
+      pageSize: 20,
+      total: 1,
+    })
+    renderAt('/my-applications', { kind: 'jobSeeker', id: 'js-1', displayName: 'Priya Raman' })
+
+    expect(await screen.findByText('Staff Engineer')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Staff Engineer/ })).toHaveAttribute(
+      'href',
+      '/job-postings/jp-1',
+    )
+    expect(getMyApplications).toHaveBeenCalledWith(1, 20)
+  })
+
+  it('redirects a signed-in Company at /my-applications to "/"', () => {
+    renderAt('/my-applications', { kind: 'company', id: 'c-1', displayName: 'Cobalt Ledger' })
+
+    expect(
+      screen.getByRole('heading', { name: 'Find your next role. Post your next hire.' }),
+    ).toBeInTheDocument()
+    expect(getMyApplications).not.toHaveBeenCalled()
+  })
+
+  it('redirects an anonymous viewer at /my-applications to "/"', () => {
+    renderAt('/my-applications')
+
+    expect(
+      screen.getByRole('heading', { name: 'Find your next role. Post your next hire.' }),
+    ).toBeInTheDocument()
+    expect(getMyApplications).not.toHaveBeenCalled()
   })
 })

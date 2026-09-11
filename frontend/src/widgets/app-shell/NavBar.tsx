@@ -22,9 +22,10 @@ interface NavItem {
 /**
  * The nav-item set for a viewer. Only links the current viewer can actually use
  * are returned — never a dead or disabled item pointing at a role-restricted
- * surface. A signed-in Company sees "Post a Job" (Story 2.1b); "My Postings"
- * and "My Applications" remain out until their surfaces land, and a Job Seeker
- * or anonymous viewer never sees the Company-only "Post a Job" item.
+ * surface. A signed-in Company sees "Post a Job" (Story 2.1b); a signed-in Job
+ * Seeker sees "My Applications" (Story 3.3b). "My Postings" remains out until
+ * its surface lands, and a Job Seeker or anonymous viewer never sees the
+ * Company-only "Post a Job" item (and vice versa).
  */
 export function navItemsFor(viewer: Viewer): NavItem[] {
   switch (viewer.kind) {
@@ -39,7 +40,10 @@ export function navItemsFor(viewer: Viewer): NavItem[] {
         { label: 'Post a Job', to: '/post-a-job' },
       ]
     case 'jobSeeker':
-      return [{ label: 'Search', to: '/' }]
+      return [
+        { label: 'Search', to: '/' },
+        { label: 'My Applications', to: '/my-applications' },
+      ]
     default:
       return []
   }

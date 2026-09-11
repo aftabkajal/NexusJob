@@ -4,6 +4,7 @@ import { createBrowserRouter, RouterProvider, type RouteObject } from 'react-rou
 
 import {
   HomePage,
+  MyApplicationsPage,
   NotFoundPage,
   PostAJobPage,
   PostingDetailPage,
@@ -33,8 +34,9 @@ export function RouteError() {
  * Router shape: one layout route (`AppShell`) owns the chrome; child routes
  * render into its `<Outlet/>`. `/` → `HomePage`; `/sign-in` → `SignInPage`;
  * `/post-a-job` → `PostAJobPage` (guarded to a signed-in Company);
- * `/job-postings/:id` → `PostingDetailPage` (open to everyone); anything
- * else → `NotFoundPage`, still inside the shell. The Host serves
+ * `/job-postings/:id` → `PostingDetailPage` (open to everyone);
+ * `/my-applications` → `MyApplicationsPage` (guarded to a signed-in Job
+ * Seeker); anything else → `NotFoundPage`, still inside the shell. The Host serves
  * `index.html` for every non-`/api` path (story 1.1), so these client paths
  * resolve on a hard refresh.
  *
@@ -52,6 +54,7 @@ export const routes: RouteObject[] = [
       { path: 'sign-in', element: <SignInPage /> },
       { path: 'post-a-job', element: <PostAJobPage /> },
       { path: 'job-postings/:id', element: <PostingDetailPage /> },
+      { path: 'my-applications', element: <MyApplicationsPage /> },
       { path: '*', element: <NotFoundPage /> },
     ],
   },

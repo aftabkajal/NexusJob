@@ -4,7 +4,9 @@ import {
   createHttp,
   type ApplicationResponse,
   type CreateApplicationRequest,
+  type MyApplicationListItemResponse,
   type MyApplicationResponse,
+  type PageOfMyApplicationListItemResponse,
 } from '../../../shared/api'
 
 /**
@@ -40,6 +42,23 @@ export const applicationsClient = {
    * check; any failure propagates unchanged.
    */
   getMine: (jobPostingId: string): Promise<MyApplicationResponse> => rawClient.getMine(jobPostingId),
+  /**
+   * Read a page of the caller's own applications (`GET
+   * /api/applications/mine/list?page=&pageSize=`), most-recent first. A `GET`,
+   * so no `callWithCsrfRetry`. The generated `getMyApplications`'s `page` /
+   * `pageSize` params are typed `any` — the same pre-existing NSwag gap as
+   * `jobPostingsClient.search` (deferred-work.md); this wrapper re-types both
+   * as `number`. The response's `page` / `pageSize` / `total` stay `any` on the
+   * wire type, matching that exact precedent.
+   */
+  getMyApplications: (page: number, pageSize: number): Promise<PageOfMyApplicationListItemResponse> =>
+    rawClient.getMyApplications(page, pageSize),
 }
 
-export type { ApplicationResponse, CreateApplicationRequest, MyApplicationResponse }
+export type {
+  ApplicationResponse,
+  CreateApplicationRequest,
+  MyApplicationListItemResponse,
+  MyApplicationResponse,
+  PageOfMyApplicationListItemResponse,
+}
