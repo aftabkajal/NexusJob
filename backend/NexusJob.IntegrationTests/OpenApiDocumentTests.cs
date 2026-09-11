@@ -346,6 +346,80 @@ public sealed class OpenApiDocumentTests(IdentityApiFixture fixture)
             ResolveSchemaProperties(root, okSchema).OrderBy(name => name, StringComparer.Ordinal));
     }
 
+    // ---- Row: Fetch the OpenAPI document -- GET /api/applications/mine/list (spec 3.3a) --
+
+    [Fact]
+    public async Task Document_describes_the_my_applications_list_operation_and_leaves_get_mine_unchanged()
+    {
+        using var client = fixture.CreateClient();
+
+        using var response = await client.GetAsync("/openapi/v1.json");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        await using var stream = await response.Content.ReadAsStreamAsync();
+        using var document = await JsonDocument.ParseAsync(stream);
+        var root = document.RootElement;
+
+        Assert.True(root.TryGetProperty("paths", out var paths));
+        Assert.True(
+            paths.TryGetProperty("/api/applications/mine/list", out var pathItem),
+            "OpenAPI document is missing the '/api/applications/mine/list' path.");
+        Assert.True(
+            pathItem.TryGetProperty("get", out var operation),
+            "'/api/applications/mine/list' does not document a 'GET' operation.");
+
+        Assert.True(operation.TryGetProperty("operationId", out var operationId));
+        Assert.Equal("Applications_GetMyApplications", operationId.GetString());
+
+        // page / pageSize are both optional query parameters.
+        Assert.True(operation.TryGetProperty("parameters", out var parameters));
+        foreach (var name in new[] { "page", "pageSize" })
+        {
+            var parameter = parameters.EnumerateArray()
+                .FirstOrDefault(p => p.TryGetProperty("name", out var n) && n.GetString() == name);
+            Assert.True(
+                parameter.ValueKind != JsonValueKind.Undefined,
+                $"'GET /api/applications/mine/list' does not document a '{name}' parameter.");
+            Assert.Equal("query", parameter.GetProperty("in").GetString());
+            var isRequired = parameter.TryGetProperty("required", out var requiredElement) && requiredElement.GetBoolean();
+            Assert.False(isRequired, $"'{name}' is documented as required; it must be optional.");
+        }
+
+        Assert.True(operation.TryGetProperty("responses", out var responses));
+        foreach (var statusCode in new[] { "200", "401", "403" })
+        {
+            Assert.True(
+                responses.TryGetProperty(statusCode, out _),
+                $"'GET /api/applications/mine/list' does not document a '{statusCode}' response.");
+        }
+
+        // The 200 body is Page<MyApplicationListItemResponse>: { items[], page, pageSize, total }.
+        var okSchema = responses.GetProperty("200")
+            .GetProperty("content").GetProperty("application/json").GetProperty("schema");
+        var schemaProperties = ResolveSchemaProperties(root, okSchema);
+        Assert.Equal(
+            ["items", "page", "pageSize", "total"],
+            schemaProperties.OrderBy(name => name, StringComparer.Ordinal));
+
+        // Each item in `items` is { applicationId, jobPostingId, jobPostingTitle, submittedAt }.
+        var itemsSchema = ResolveSchema(root, okSchema).GetProperty("properties").GetProperty("items");
+        var itemSchema = itemsSchema.GetProperty("items");
+        var itemProperties = ResolveSchemaProperties(root, itemSchema);
+        Assert.Equal(
+            ["applicationId", "jobPostingId", "jobPostingTitle", "submittedAt"],
+            itemProperties.OrderBy(name => name, StringComparer.Ordinal));
+
+        // The existing /mine probe's operation is untouched by this story.
+        Assert.True(
+            paths.TryGetProperty("/api/applications/mine", out var minePathItem),
+            "OpenAPI document is missing the '/api/applications/mine' path.");
+        Assert.True(
+            minePathItem.TryGetProperty("get", out var mineOperation),
+            "'/api/applications/mine' does not document a 'GET' operation.");
+        Assert.True(mineOperation.TryGetProperty("operationId", out var mineOperationId));
+        Assert.Equal("Applications_GetMine", mineOperationId.GetString());
+    }
+
     private static JsonElement ResolveSchema(JsonElement root, JsonElement schema)
     {
         if (schema.TryGetProperty("$ref", out var reference))

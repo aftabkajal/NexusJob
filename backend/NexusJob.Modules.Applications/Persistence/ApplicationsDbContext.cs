@@ -38,6 +38,12 @@ public sealed class ApplicationsDbContext(DbContextOptions<ApplicationsDbContext
             // the idempotency guard (AD-9 / AD-20): the apply handler attempts the
             // insert and catches the 23505 unique-violation - no pre-check SELECT.
             entity.HasIndex(e => new { e.JobPostingId, e.JobSeekerId }).IsUnique();
+
+            // Serves GetMyApplicationsListHandler's `WHERE job_seeker_id = @seeker
+            // ORDER BY submitted_at DESC` query (story 3.3a). The unique pair
+            // index above has job_posting_id as its leading column, so it cannot
+            // serve this access pattern efficiently.
+            entity.HasIndex(e => new { e.JobSeekerId, e.SubmittedAt });
         });
     }
 }
