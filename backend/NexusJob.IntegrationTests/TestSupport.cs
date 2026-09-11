@@ -59,6 +59,13 @@ internal sealed record MyApplicationDto(
     [property: JsonPropertyName("applied")] bool Applied,
     [property: JsonPropertyName("appliedAt")] DateTimeOffset? AppliedAt);
 
+/// <summary>One row of <c>GET /api/applications/mine/list</c>'s paged results: <c>{ applicationId, jobPostingId, jobPostingTitle, submittedAt }</c>.</summary>
+internal sealed record MyApplicationListItemDto(
+    [property: JsonPropertyName("applicationId")] string ApplicationId,
+    [property: JsonPropertyName("jobPostingId")] string JobPostingId,
+    [property: JsonPropertyName("jobPostingTitle")] string JobPostingTitle,
+    [property: JsonPropertyName("submittedAt")] DateTimeOffset SubmittedAt);
+
 /// <summary>The observed shape of <c>identity.job_seeker_account</c> after the migration.</summary>
 internal sealed record JobSeekerAccountSchema(
     IReadOnlyList<(string Name, string DataType, bool NotNull)> Columns,
@@ -359,6 +366,31 @@ internal sealed class ApplicationsDatabase(string connectionString)
 
         return (columns, hasUniquePairIndex);
     }
+
+    /// <summary>
+    /// Inserts an application row directly, bypassing <c>POST /api/applications</c>,
+    /// so a test can control row order/count for pagination assertions and seed an
+    /// orphan <paramref name="jobPostingId"/> that matches no real posting (a
+    /// data-integrity violation, unreachable through the API - mirrors
+    /// <c>JobPostingsDatabase.InsertPostingAsync</c>'s orphan-row seeding pattern).
+    /// Returns the new application id (a <see cref="Guid"/> v7, generated here).
+    /// </summary>
+    public async Task<Guid> InsertApplicationAsync(Guid jobPostingId, Guid jobSeekerId, DateTimeOffset submittedAt)
+    {
+        var id = Guid.CreateVersion7();
+        await using var connection = new NpgsqlConnection(connectionString);
+        await connection.OpenAsync();
+        await using var command = new NpgsqlCommand(
+            "INSERT INTO applications.application (id, job_posting_id, job_seeker_id, submitted_at) " +
+            "VALUES (@id, @jobPostingId, @jobSeekerId, @submittedAt)",
+            connection);
+        command.Parameters.AddWithValue("id", id);
+        command.Parameters.AddWithValue("jobPostingId", jobPostingId);
+        command.Parameters.AddWithValue("jobSeekerId", jobSeekerId);
+        command.Parameters.AddWithValue("submittedAt", submittedAt);
+        await command.ExecuteNonQueryAsync();
+        return id;
+    }
 }
 
 /// <summary>
@@ -487,5 +519,29 @@ internal sealed class AuthApiClient(HttpClient http)
             ? string.Empty
             : $"?jobPostingId={Uri.EscapeDataString(jobPostingId)}";
         return http.GetAsync($"/api/applications/mine{queryString}");
+    }
+
+    /// <summary>
+    /// <c>GET /api/applications/mine/list?page=&amp;pageSize=</c> - a Job Seeker
+    /// read (story 3.3a): no antiforgery seed (GET). The client's cookie
+    /// container is used as-is. Every parameter is optional; a
+    /// <see langword="null"/> argument omits that query-string entry (mirrors
+    /// <see cref="SearchPostingsAsync"/>).
+    /// </summary>
+    public Task<HttpResponseMessage> GetMyApplicationsAsync(int? page = null, int? pageSize = null)
+    {
+        var parameters = new List<string>();
+        if (page is not null)
+        {
+            parameters.Add($"page={page.Value}");
+        }
+
+        if (pageSize is not null)
+        {
+            parameters.Add($"pageSize={pageSize.Value}");
+        }
+
+        var queryString = parameters.Count == 0 ? string.Empty : $"?{string.Join('&', parameters)}";
+        return http.GetAsync($"/api/applications/mine/list{queryString}");
     }
 }

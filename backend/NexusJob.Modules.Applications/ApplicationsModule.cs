@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using NexusJob.Modules.Applications.Auth;
 using NexusJob.Modules.Applications.Features.CreateApplication;
 using NexusJob.Modules.Applications.Features.GetMyApplication;
+using NexusJob.Modules.Applications.Features.GetMyApplicationsList;
 using NexusJob.Modules.Applications.Persistence;
 using Npgsql;
 
@@ -42,6 +43,7 @@ public static class ApplicationsModule
         services.AddScoped<JobSeekerOnlyEndpointFilter>();
         services.AddScoped<CreateApplicationHandler>();
         services.AddScoped<GetMyApplicationHandler>();
+        services.AddScoped<GetMyApplicationsListHandler>();
 
         return services;
     }
@@ -84,6 +86,18 @@ public static class ApplicationsModule
             .AddEndpointFilter<JobSeekerOnlyEndpointFilter>()
             .Produces<MyApplicationResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden);
+
+        // GET /mine/list is a sibling route of /mine (spec Boundaries &
+        // Constraints, Decision 2026-09-12) - a new operation id, not a second
+        // shape on Applications_GetMine. A Job Seeker read: RequireAuthorization
+        // + JobSeekerOnly only, no antiforgery on a GET.
+        group.MapGet("/mine/list", GetMyApplicationsListEndpoint.Handle)
+            .WithName("Applications_GetMyApplications")
+            .RequireAuthorization()
+            .AddEndpointFilter<JobSeekerOnlyEndpointFilter>()
+            .Produces<Page<MyApplicationListItemResponse>>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status403Forbidden);
 

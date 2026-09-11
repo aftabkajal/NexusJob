@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 09-05-2026 23:57
-last_updated: 09-11-2026 22:40
+last_updated: 09-12-2026 10:10
 project: NexusJobBmad
 project_key: NOKEY
 tracking_system: file-system
@@ -51,6 +51,6 @@ development_status:
   epic-3: in-progress
   3-1-apply-to-a-posting: review  # split: 3.1a Applications module + POST /api/applications + GET /api/applications/mine (backend) DONE + reviewed; 3.1b apply surface + AR-10 mirror-slice checkpoint DONE + reviewed
   3-2-apply-gate-for-signed-out-visitors: review
-  3-3-a-job-seeker-sees-the-postings-they-applied-to: backlog
+  3-3-a-job-seeker-sees-the-postings-they-applied-to: review  # split: 3.3a GET /api/applications/mine/list paged endpoint (backend) DONE + reviewed; 3.3b My Applications page + nav item deferred (deferred-work.md)
   3-4-a-company-sees-who-applied-to-its-posting: backlog
   epic-3-retrospective: optional
