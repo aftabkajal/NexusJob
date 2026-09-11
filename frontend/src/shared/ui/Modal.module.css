@@ -1,0 +1,26 @@
+/*
+ * `apply-gate-modal` chrome (DESIGN.md `components.apply-gate-modal`). Panel
+ * colour/radius/spacing are tokens; the overlay tint and panel shadow are raw,
+ * un-tokenized values per Boundaries — this is the first overlay the app has
+ * needed (mirrors `JobPostingCard.module.css`'s existing raw-shadow precedent).
+ * No `z-index` token category exists; `1000` is local to this one overlay.
+ */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgb(26 27 46 / 55%);
+}
+
+.panel {
+  width: 100%;
+  max-width: 480px;
+  background-color: var(--color-surface);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  box-shadow: 0 20px 48px rgb(26 27 46 / 18%);
+}

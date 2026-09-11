@@ -56,8 +56,9 @@ function renderAt(path: string, routePath = '/job-postings/:id') {
 
 beforeEach(() => {
   getById.mockReset()
-  // Default: signed-out visitor — no `ApplyButton` (Story 3.1b renders it only
-  // for a signed-in Job Seeker), so the pre-3.1b assertions are unaffected.
+  // Default: signed-out visitor — `ApplyButton` renders as the apply-gate
+  // trigger (Story 3.2), not hidden; the pre-3.1b/3.1b assertions below don't
+  // click it, so they stay unaffected by the gate's own behavior.
   useSessionMock.mockReturnValue({ isPending: false, isError: false, data: null })
   useMyApplicationMock.mockReturnValue({ isPending: false, isError: false, data: undefined })
 })
@@ -164,12 +165,14 @@ describe('PostingDetailPage — apply surface (Story 3.1b)', () => {
     expect(screen.queryByRole('button', { name: 'Apply' })).not.toBeInTheDocument()
   })
 
-  it('renders no Apply button for a signed-out visitor', async () => {
+  it('renders the apply-gate trigger button (not hidden) for a signed-out visitor, with no modal until clicked', async () => {
     getById.mockResolvedValue(posting)
     renderAt('/job-postings/jp-1')
 
     await screen.findByRole('heading', { level: 1, name: 'Staff Engineer' })
-    expect(screen.queryByRole('button', { name: 'Apply' })).not.toBeInTheDocument()
+    const button = screen.getByRole('button', { name: 'Apply' })
+    expect(button).toHaveAttribute('aria-haspopup', 'dialog')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
   it('renders no Apply button while the session is unresolved', async () => {

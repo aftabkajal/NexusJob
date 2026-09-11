@@ -4,13 +4,20 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router'
 
 import { authClient, sessionQueryKey } from '../../../entities'
-import { toApiError } from '../../../shared/lib'
+import {
+  mapAuthFieldErrors,
+  toApiError,
+  validateEmail,
+  validateName,
+  validatePassword,
+  type AuthFieldErrors,
+} from '../../../shared/lib'
 import type { Role } from '../../../shared/ui'
 
 export type AuthMode = 'signUp' | 'logIn'
 
 type FieldName = 'name' | 'email' | 'password'
-type FieldErrors = Partial<Record<FieldName, string>>
+type FieldErrors = AuthFieldErrors
 
 /** Prescribed copy — used verbatim, do not reword. Role-aware: names the role
  * the email is already taken by, matching the epic microcopy rules. */
@@ -23,48 +30,9 @@ const CREDENTIAL_MISMATCH_MESSAGE = "That email and password don't match. Please
 /** Fallback for any other failure. Formal, complete sentence, no exclamation. */
 const GENERIC_MESSAGE = 'We could not complete your request. Please try again.'
 
-// A deliberately permissive check — the server's `[EmailAddress]` rule is
-// authoritative; this only catches the obviously malformed before a request.
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-
-function validateName(value: string, role: Role): string | undefined {
-  if (value.trim() !== '') return undefined
-  return role === 'jobSeeker' ? 'Enter your full name.' : 'Enter your company name.'
-}
-
-function validateEmail(value: string): string | undefined {
-  const trimmed = value.trim()
-  if (trimmed === '') return 'Enter your email address.'
-  if (!EMAIL_PATTERN.test(trimmed)) return 'Enter a valid email address.'
-  return undefined
-}
-
-function validatePassword(value: string): string | undefined {
-  if (value === '') return 'Enter your password.'
-  if (value.length < 8) return 'Your password must be at least 8 characters.'
-  return undefined
-}
-
 const VALIDATORS: Record<'email' | 'password', (value: string) => string | undefined> = {
   email: validateEmail,
   password: validatePassword,
-}
-
-/**
- * Map a server-side `errors` map (a rule the client check missed) onto our
- * field slots by matching the key substring.
- */
-function mapServerFieldErrors(errors: Record<string, string[]>): FieldErrors {
-  const mapped: FieldErrors = {}
-  for (const [key, messages] of Object.entries(errors)) {
-    const message = messages[0]
-    if (!message) continue
-    const lower = key.toLowerCase()
-    if (lower.includes('name')) mapped.name = message
-    else if (lower.includes('email')) mapped.email = message
-    else if (lower.includes('password')) mapped.password = message
-  }
-  return mapped
 }
 
 export function useAuthForm() {
@@ -115,7 +83,7 @@ export function useAuthForm() {
         return
       }
       if (apiError?.status === 400 && apiError.errors) {
-        const mapped = mapServerFieldErrors(apiError.errors)
+        const mapped = mapAuthFieldErrors(apiError.errors)
         if (Object.keys(mapped).length > 0) {
           setFieldErrors((prev) => ({ ...prev, ...mapped }))
           return

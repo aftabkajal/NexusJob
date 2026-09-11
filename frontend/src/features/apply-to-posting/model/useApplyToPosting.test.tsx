@@ -85,9 +85,12 @@ describe('useApplyToPosting — render gate', () => {
     expect(setup().result.current.render).toBe('hidden')
   })
 
-  it('is hidden for a signed-out visitor', () => {
+  it('renders the apply-gate for a signed-out visitor and does not enable the mine query', () => {
     useSessionMock.mockReturnValue({ isPending: false, isError: false, data: null })
-    expect(setup().result.current.render).toBe('hidden')
+    const { result } = setup()
+
+    expect(result.current.render).toBe('gate')
+    expect(useMyApplicationMock).toHaveBeenCalledWith('jp-1', false)
   })
 })
 
