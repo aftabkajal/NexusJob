@@ -13,11 +13,12 @@ import {
 const APPLY_FAILED_MESSAGE = "We couldn't submit your application. Please try again."
 export const APPLY_SUBMITTED_MESSAGE = 'Your application has been submitted.'
 
-export type ApplyRender = 'hidden' | 'button'
+export type ApplyRender = 'hidden' | 'button' | 'gate'
 
 export interface UseApplyToPosting {
-  /** `hidden` for a signed-out / Company / unresolved session — the button
-   * renders nothing (Story 3.2 adds the signed-out branch and its modal). */
+  /** `hidden` for a Company or unresolved session; `gate` for a signed-out
+   * visitor (Story 3.2's apply-gate modal); `button` for a signed-in Job
+   * Seeker. */
   render: ApplyRender
   /** `true` once the Job Seeker has applied — on load (`mine.applied`) or after
    * a fresh inline submit (`submitted`). Drives the `Applied` label + styling. */
@@ -59,6 +60,18 @@ export function useApplyToPosting(jobPostingId: string): UseApplyToPosting {
   const isJobSeeker = !session.isPending && !session.isError && session.data?.kind === 'jobSeeker'
   const mine = useMyApplication(jobPostingId, isJobSeeker)
 
+  // Three-way render gate (Story 3.2): a pending/errored session hides the
+  // button entirely; `session.data === null` is a resolved signed-out visitor
+  // and opens the apply-gate; a resolved Company session stays hidden; a
+  // resolved Job Seeker session shows the inline button.
+  const render: ApplyRender = session.isPending || session.isError
+    ? 'hidden'
+    : session.data === null
+      ? 'gate'
+      : session.data?.kind === 'company'
+        ? 'hidden'
+        : 'button'
+
   const [submitted, setSubmitted] = useState(false)
   const [formError, setFormError] = useState<string>()
 
@@ -78,8 +91,6 @@ export function useApplyToPosting(jobPostingId: string): UseApplyToPosting {
   // no window where the button shows `Apply` again between success and the
   // `mine` refetch. Branch on `.applied`, never on `appliedAt`.
   const applied = submitted || mine.data?.applied === true
-
-  const render: ApplyRender = isJobSeeker ? 'button' : 'hidden'
 
   return {
     render,
