@@ -4,8 +4,10 @@ import {
   createHttp,
   type CreateJobPostingRequest,
   type JobPostingDetailResponse,
+  type JobPostingMineItemResponse,
   type JobPostingResponse,
   type JobPostingSearchResultResponse,
+  type PageOfJobPostingMineItemResponse,
   type PageOfJobPostingSearchResultResponse,
 } from '../../../shared/api'
 
@@ -45,12 +47,25 @@ export const jobPostingsClient = {
     page: number,
     pageSize: number,
   ): Promise<PageOfJobPostingSearchResultResponse> => rawClient.search(query, page, pageSize),
+  /**
+   * Read a page of the signed-in Company's own postings (`GET
+   * /api/job-postings/mine?page=&pageSize=`), most-recent first. A `GET`, so
+   * no `callWithCsrfRetry`. The generated `getMine`'s `page` / `pageSize`
+   * params are typed `any` — the same pre-existing NSwag gap as `search`
+   * (deferred-work.md); this wrapper re-types both as `number`. The endpoint
+   * is `401` / `403` for anyone but a signed-in Company (3-4a); any failure
+   * propagates to the caller unchanged.
+   */
+  getMine: (page: number, pageSize: number): Promise<PageOfJobPostingMineItemResponse> =>
+    rawClient.getMine(page, pageSize),
 }
 
 export type {
   CreateJobPostingRequest,
   JobPostingDetailResponse,
+  JobPostingMineItemResponse,
   JobPostingResponse,
   JobPostingSearchResultResponse,
+  PageOfJobPostingMineItemResponse,
   PageOfJobPostingSearchResultResponse,
 }

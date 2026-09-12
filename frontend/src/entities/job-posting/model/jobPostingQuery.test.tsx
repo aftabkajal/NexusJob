@@ -10,16 +10,19 @@ import { jobPostingsClient } from '../api/jobPostingsClient'
 import {
   jobPostingQueryKey,
   jobPostingSearchQueryKey,
+  jobPostingsMineQueryKey,
   useJobPosting,
   useJobPostingSearch,
+  useMyJobPostings,
 } from './jobPostingQuery'
 
 vi.mock('../api/jobPostingsClient', () => ({
-  jobPostingsClient: { getById: vi.fn(), search: vi.fn() },
+  jobPostingsClient: { getById: vi.fn(), search: vi.fn(), getMine: vi.fn() },
 }))
 
 const getById = vi.mocked(jobPostingsClient.getById)
 const search = vi.mocked(jobPostingsClient.search)
+const getMine = vi.mocked(jobPostingsClient.getMine)
 
 function wrapper({ children }: { children: ReactNode }) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -29,6 +32,7 @@ function wrapper({ children }: { children: ReactNode }) {
 beforeEach(() => {
   getById.mockReset()
   search.mockReset()
+  getMine.mockReset()
 })
 
 describe('jobPostingQueryKey', () => {
@@ -116,6 +120,45 @@ describe('useJobPostingSearch', () => {
     search.mockRejectedValue({ status: 500, title: 'Server error' })
 
     const { result } = renderHook(() => useJobPostingSearch('engineer', 1, 20), { wrapper })
+
+    await waitFor(() => expect(result.current.isError).toBe(true))
+    expect(toApiError(result.current.error)?.status).toBe(500)
+  })
+})
+
+describe('jobPostingsMineQueryKey', () => {
+  it('is owned by the slice and scoped to page and pageSize', () => {
+    expect(jobPostingsMineQueryKey(1, 20)).toEqual(['job-postings', 'mine', 1, 20])
+  })
+})
+
+describe('useMyJobPostings', () => {
+  it('resolves the page into isSuccess + data', async () => {
+    getMine.mockResolvedValue({
+      items: [
+        {
+          id: 'jp-1',
+          title: 'Staff Engineer',
+          description: 'Build the platform.',
+          createdAt: '2026-09-08T00:00:00Z',
+        },
+      ],
+      page: 1,
+      pageSize: 20,
+      total: 1,
+    })
+
+    const { result } = renderHook(() => useMyJobPostings(1, 20), { wrapper })
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(result.current.data?.total).toBe(1)
+    expect(getMine).toHaveBeenCalledWith(1, 20)
+  })
+
+  it('surfaces a rejection as a query error the page can branch on via toApiError', async () => {
+    getMine.mockRejectedValue({ status: 500, title: 'Server error' })
+
+    const { result } = renderHook(() => useMyJobPostings(1, 20), { wrapper })
 
     await waitFor(() => expect(result.current.isError).toBe(true))
     expect(toApiError(result.current.error)?.status).toBe(500)

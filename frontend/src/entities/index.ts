@@ -1,14 +1,18 @@
 // FSD `entities` layer: domain nouns with their query keys and API segments.
 export {
+  applicantsQueryKey,
   applicationMineQueryKey,
   applicationsClient,
   applicationsMineListQueryKey,
+  useApplicants,
   useMyApplication,
   useMyApplications,
+  type ApplicantListItemResponse,
   type ApplicationResponse,
   type CreateApplicationRequest,
   type MyApplicationListItemResponse,
   type MyApplicationResponse,
+  type PageOfApplicantListItemResponse,
   type PageOfMyApplicationListItemResponse,
 } from './application'
 export {
@@ -23,11 +27,15 @@ export {
   jobPostingQueryKey,
   jobPostingSearchQueryKey,
   jobPostingsClient,
+  jobPostingsMineQueryKey,
   useJobPosting,
   useJobPostingSearch,
+  useMyJobPostings,
   type CreateJobPostingRequest,
   type JobPostingDetailResponse,
+  type JobPostingMineItemResponse,
   type JobPostingResponse,
   type JobPostingSearchResultResponse,
+  type PageOfJobPostingMineItemResponse,
   type PageOfJobPostingSearchResultResponse,
 } from './job-posting'

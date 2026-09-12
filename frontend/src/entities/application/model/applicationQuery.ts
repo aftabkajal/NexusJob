@@ -49,3 +49,26 @@ export function useMyApplications(page: number, pageSize: number) {
     queryFn: () => applicationsClient.getMyApplications(page, pageSize),
   })
 }
+
+/**
+ * The `applicants` query key, owned by this slice: `['application',
+ * 'applicants', jobPostingId, page, pageSize]`.
+ */
+export const applicantsQueryKey = (jobPostingId: string, page: number, pageSize: number) =>
+  ['application', 'applicants', jobPostingId, page, pageSize] as const
+
+/**
+ * Read a page of a posting's applicants. A bare `useQuery`, no `staleTime:
+ * Infinity` (mirrors `useMyApplications`) — the list changes as more Job
+ * Seekers apply. No `enabled` gate: this query only ever mounts inside
+ * `ApplicantsPage`, which is itself already gated to a resolved Company
+ * session before rendering the list; the endpoint's own `404` (missing or
+ * not-owned posting) surfaces as a query error the page branches on via
+ * `toApiError`.
+ */
+export function useApplicants(jobPostingId: string, page: number, pageSize: number) {
+  return useQuery({
+    queryKey: applicantsQueryKey(jobPostingId, page, pageSize),
+    queryFn: () => applicationsClient.getApplicants(jobPostingId, page, pageSize),
+  })
+}

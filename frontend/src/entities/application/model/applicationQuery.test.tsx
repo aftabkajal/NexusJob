@@ -8,18 +8,26 @@ import { toApiError } from '../../../shared/lib'
 import { applicationsClient } from '../api/applicationsClient'
 
 import {
+  applicantsQueryKey,
   applicationMineQueryKey,
   applicationsMineListQueryKey,
+  useApplicants,
   useMyApplication,
   useMyApplications,
 } from './applicationQuery'
 
 vi.mock('../api/applicationsClient', () => ({
-  applicationsClient: { apply: vi.fn(), getMine: vi.fn(), getMyApplications: vi.fn() },
+  applicationsClient: {
+    apply: vi.fn(),
+    getMine: vi.fn(),
+    getMyApplications: vi.fn(),
+    getApplicants: vi.fn(),
+  },
 }))
 
 const getMine = vi.mocked(applicationsClient.getMine)
 const getMyApplications = vi.mocked(applicationsClient.getMyApplications)
+const getApplicants = vi.mocked(applicationsClient.getApplicants)
 
 function wrapper({ children }: { children: ReactNode }) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -29,6 +37,7 @@ function wrapper({ children }: { children: ReactNode }) {
 beforeEach(() => {
   getMine.mockReset()
   getMyApplications.mockReset()
+  getApplicants.mockReset()
 })
 
 describe('applicationMineQueryKey', () => {
@@ -105,5 +114,44 @@ describe('useMyApplications', () => {
 
     await waitFor(() => expect(result.current.isError).toBe(true))
     expect(toApiError(result.current.error)?.status).toBe(500)
+  })
+})
+
+describe('applicantsQueryKey', () => {
+  it('is owned by the slice and scoped to the posting id, page, and pageSize', () => {
+    expect(applicantsQueryKey('jp-1', 1, 20)).toEqual(['application', 'applicants', 'jp-1', 1, 20])
+  })
+})
+
+describe('useApplicants', () => {
+  it('resolves the page into isSuccess + data', async () => {
+    getApplicants.mockResolvedValue({
+      items: [
+        {
+          jobSeekerId: 'js-1',
+          fullName: 'Priya Raman',
+          email: 'priya@example.com',
+          submittedAt: '2026-09-11T00:00:00Z',
+        },
+      ],
+      page: 1,
+      pageSize: 20,
+      total: 1,
+    })
+
+    const { result } = renderHook(() => useApplicants('jp-1', 1, 20), { wrapper })
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(result.current.data?.total).toBe(1)
+    expect(getApplicants).toHaveBeenCalledWith('jp-1', 1, 20)
+  })
+
+  it('surfaces a 404 as a query error the page can branch on via toApiError', async () => {
+    getApplicants.mockRejectedValue({ status: 404, title: 'Not Found' })
+
+    const { result } = renderHook(() => useApplicants('missing', 1, 20), { wrapper })
+
+    await waitFor(() => expect(result.current.isError).toBe(true))
+    expect(toApiError(result.current.error)?.status).toBe(404)
   })
 })
