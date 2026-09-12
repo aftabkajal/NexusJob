@@ -111,13 +111,13 @@ describe('NavBar — signed-in Job Seeker viewer', () => {
     return { onLogOut }
   }
 
-  it('resolves navItemsFor to Search only', () => {
+  it('resolves navItemsFor to Search and My Applications', () => {
     expect(
       navItemsFor({ kind: 'jobSeeker', displayName: 'Priya Raman' }).map((item) => item.to),
-    ).toEqual(['/'])
+    ).toEqual(['/', '/my-applications'])
   })
 
-  it('renders Search, the display name, and a Log out control', () => {
+  it('renders Search, My Applications, the display name, and a Log out control', () => {
     renderJobSeekerNavBar()
 
     const nav = screen.getByRole('navigation', { name: 'Primary' })
@@ -125,18 +125,25 @@ describe('NavBar — signed-in Job Seeker viewer', () => {
       within(nav)
         .getAllByRole('link')
         .map((link) => link.textContent),
-    ).toEqual(['Search'])
+    ).toEqual(['Search', 'My Applications'])
+    expect(within(nav).getByRole('link', { name: 'My Applications' })).toHaveAttribute(
+      'href',
+      '/my-applications',
+    )
     expect(within(nav).getByText('Priya Raman')).toBeInTheDocument()
     expect(within(nav).getByRole('button', { name: 'Log out' })).toBeInTheDocument()
   })
 
-  it('points no nav link at a Company-only or Job-Seeker-only surface', () => {
+  it('shows My Applications but no other role-restricted surface', () => {
     renderJobSeekerNavBar()
 
     const nav = screen.getByRole('navigation', { name: 'Primary' })
-    for (const link of within(nav).getAllByRole('link')) {
-      expect(ROLE_RESTRICTED_ROUTES).not.toContain(link.getAttribute('href'))
-    }
+    const hrefs = within(nav)
+      .getAllByRole('link')
+      .map((link) => link.getAttribute('href'))
+    expect(hrefs).toContain('/my-applications')
+    expect(hrefs).not.toContain('/post-a-job')
+    expect(hrefs).not.toContain('/my-postings')
   })
 
   it('invokes onLogOut when Log out is activated', async () => {

@@ -5,6 +5,10 @@ export interface PaginationProps {
   pageSize: number
   total: number
   onPageChange: (page: number) => void
+  /** Accessible name for the pages landmark. Defaults to the Home search
+   * results' label so existing callers are unaffected; a consumer paginating
+   * a different list (e.g. My Applications) should pass its own. */
+  label?: string
 }
 
 /**
@@ -12,13 +16,19 @@ export interface PaginationProps {
  * buttons around a "Page {page} of {totalPages}" label. No domain knowledge —
  * presentational only, driven entirely by props.
  */
-export function Pagination({ page, pageSize, total, onPageChange }: PaginationProps) {
+export function Pagination({
+  page,
+  pageSize,
+  total,
+  onPageChange,
+  label = 'Search results pages',
+}: PaginationProps) {
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
   const isFirstPage = page <= 1
   const isLastPage = page >= totalPages
 
   return (
-    <nav aria-label="Search results pages" className={styles.nav}>
+    <nav aria-label={label} className={styles.nav}>
       <button
         type="button"
         className={styles.button}

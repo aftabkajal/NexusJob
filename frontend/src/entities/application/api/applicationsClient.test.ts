@@ -153,3 +153,42 @@ describe('applicationsClient.getMine', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 })
+
+describe('applicationsClient.getMyApplications', () => {
+  it('issues GET /api/applications/mine/list with credentials, no CSRF, resolving the page', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(200, {
+        items: [
+          {
+            applicationId: 'app-1',
+            jobPostingId: 'jp-1',
+            jobPostingTitle: 'Staff Engineer',
+            submittedAt: '2026-09-11T00:00:00Z',
+          },
+        ],
+        page: 1,
+        pageSize: 20,
+        total: 1,
+      }),
+    )
+
+    const result = await applicationsClient.getMyApplications(1, 20)
+
+    expect(result.total).toBe(1)
+    expect(result.items[0]?.applicationId).toBe('app-1')
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(urlOf(0)).toBe('/api/applications/mine/list?page=1&pageSize=20')
+    expect((initOf(0).method ?? 'GET').toUpperCase()).toBe('GET')
+    expect(initOf(0).credentials).toBe('include')
+    expect(headerOf(0, 'X-CSRF-TOKEN')).toBeNull()
+  })
+
+  it('propagates a rejection unchanged, with no CSRF seed or retry', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(401, { title: 'Unauthorized', status: 401 }))
+
+    await expect(applicationsClient.getMyApplications(1, 20)).rejects.toMatchObject({
+      status: 401,
+    })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+})

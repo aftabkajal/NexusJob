@@ -11,6 +11,15 @@ describe('Pagination', () => {
     expect(screen.getByRole('navigation', { name: 'Search results pages' })).toBeInTheDocument()
   })
 
+  it('accepts a custom label for a consumer paginating a different list', () => {
+    render(
+      <Pagination page={1} pageSize={20} total={100} onPageChange={vi.fn()} label="My applications pages" />,
+    )
+
+    expect(screen.getByRole('navigation', { name: 'My applications pages' })).toBeInTheDocument()
+    expect(screen.queryByRole('navigation', { name: 'Search results pages' })).not.toBeInTheDocument()
+  })
+
   it('renders "Page {page} of {totalPages}" between Prev and Next', () => {
     render(<Pagination page={2} pageSize={20} total={100} onPageChange={vi.fn()} />)
 

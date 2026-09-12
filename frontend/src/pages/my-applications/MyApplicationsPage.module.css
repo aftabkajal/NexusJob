@@ -1,0 +1,177 @@
+/*
+ * `/my-applications` — the paged list of the caller's own applications.
+ * `.row` mirrors `JobPostingCard.module.css`'s `.card` (surface, border,
+ * radius, hover elevation) minus the description line. `.results` mirrors
+ * `HomePage.module.css`'s `.results` stack. The skeleton, empty-state,
+ * error-banner and retry-button classes copy `HomePage.module.css` verbatim —
+ * same tokens, same shapes.
+ */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-editorial);
+}
+
+.results {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* Screen-reader-only heading / loading label. */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.row {
+  display: block;
+  padding: var(--space-5);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  color: inherit;
+}
+
+.row:hover {
+  box-shadow:
+    0 1px 2px rgb(26 27 46 / 6%),
+    0 4px 12px rgb(26 27 46 / 6%);
+}
+
+.title {
+  margin: 0 0 var(--space-2);
+  color: var(--color-text-primary);
+  font-size: var(--text-heading-sm-size);
+  font-weight: var(--text-heading-sm-weight);
+  line-height: var(--text-heading-sm-line);
+}
+
+.appliedAt {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-body-sm-size);
+  font-weight: var(--text-body-sm-weight);
+  line-height: var(--text-body-sm-line);
+}
+
+/*
+ * Skeleton row shell — mirrors `JobPostingCard.module.css`'s `.card` +
+ * `.skeletonLine`, `@keyframes skeleton-pulse`, and its
+ * `prefers-reduced-motion` suppression.
+ */
+.skeletonRow {
+  display: block;
+  padding: var(--space-5);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.skeletonLine {
+  display: block;
+  margin-bottom: var(--space-2);
+  background-color: var(--color-border);
+  border-radius: var(--radius-sm);
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+.skeletonTitle {
+  width: 45%;
+  height: var(--space-5);
+}
+
+.skeletonAppliedAt {
+  width: 30%;
+  height: var(--space-4);
+  margin-bottom: 0;
+}
+
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeletonLine {
+    animation: none;
+  }
+}
+
+.catalog {
+  padding: var(--space-8) var(--space-6);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  text-align: center;
+}
+
+.empty-state {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-line);
+}
+
+.searchLink {
+  display: inline-block;
+  margin-top: var(--space-3);
+  color: var(--color-accent);
+  text-decoration: underline;
+  font-size: var(--text-body-sm-size);
+  font-weight: var(--text-body-sm-weight);
+  line-height: var(--text-body-sm-line);
+}
+
+/*
+ * Failure banner — mirrors `HomePage.module.css`'s `.error-banner`:
+ * `--color-danger` text on `--color-danger-subtle`.
+ */
+.error-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  color: var(--color-danger);
+  background-color: var(--color-danger-subtle);
+  border-radius: var(--radius-md);
+  font-size: var(--text-body-sm-size);
+  font-weight: var(--text-body-sm-weight);
+  line-height: var(--text-body-sm-line);
+}
+
+.error-banner p {
+  margin: 0;
+}
+
+.retry-button {
+  flex-shrink: 0;
+  padding: var(--space-2) var(--space-4);
+  color: var(--color-danger);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
+  font-family: var(--font-family);
+  font-size: var(--text-label-size);
+  font-weight: var(--text-label-weight);
+  line-height: var(--text-label-line);
+  letter-spacing: var(--text-label-tracking);
+  cursor: pointer;
+}
