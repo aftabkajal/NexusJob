@@ -38,6 +38,18 @@ public sealed class ContractApiTests(IdentityApiFixture fixture)
         return (Guid.Parse(account!.Id), Guid.Parse(posting!.Id), displayName);
     }
 
+    /// <summary>Registers a Job Seeker; returns its account id, full name, and email.</summary>
+    private async Task<(Guid Id, string FullName, string Email)> SeedJobSeekerAsync(string fullName)
+    {
+        var email = NewEmail();
+        var client = NewClient();
+        using var registration = await client.RegisterAsync(fullName, email, Password, accountType: "job_seeker");
+        Assert.Equal(HttpStatusCode.OK, registration.StatusCode);
+        var account = await registration.Content.ReadFromJsonAsync<AuthAccountDto>();
+
+        return (Guid.Parse(account!.Id), fullName, email);
+    }
+
     // ---- IIdentityApi.GetCompany - hit / miss ---------------------------
 
     [Fact]
@@ -121,5 +133,49 @@ public sealed class ContractApiTests(IdentityApiFixture fixture)
         Assert.All(map, pair => Assert.Equal(pair.Key, pair.Value.Id));
 
         Assert.Empty(jobPostingsApi.GetPostingSummaries([]));
+    }
+
+    // ---- IIdentityApi.GetJobSeeker - hit / miss ------------------------
+
+    [Fact]
+    public async Task IdentityApi_GetJobSeeker_returns_the_summary_for_a_known_id_and_null_for_an_unknown_one()
+    {
+        var (seekerId, fullName, email) = await SeedJobSeekerAsync("Dana Scully");
+
+        using var scope = fixture.Services.CreateScope();
+        var identityApi = scope.ServiceProvider.GetRequiredService<IIdentityApi>();
+
+        var hit = identityApi.GetJobSeeker(seekerId);
+        Assert.NotNull(hit);
+        Assert.Equal(seekerId, hit!.Id);
+        Assert.Equal(fullName, hit.FullName);
+        Assert.Equal(email, hit.Email);
+
+        Assert.Null(identityApi.GetJobSeeker(Guid.NewGuid()));
+    }
+
+    // ---- IIdentityApi.GetJobSeekers - batch: known-only, empty ---------
+
+    [Fact]
+    public async Task IdentityApi_GetJobSeekers_maps_only_the_known_ids_and_handles_an_empty_input()
+    {
+        var (seekerA, nameA, emailA) = await SeedJobSeekerAsync("Fox Mulder");
+        var (seekerB, nameB, emailB) = await SeedJobSeekerAsync("Dana Scully");
+        var unknown = Guid.NewGuid();
+
+        using var scope = fixture.Services.CreateScope();
+        var identityApi = scope.ServiceProvider.GetRequiredService<IIdentityApi>();
+
+        var map = identityApi.GetJobSeekers([seekerA, seekerB, unknown]);
+
+        Assert.Equal(2, map.Count);
+        Assert.Equal(nameA, map[seekerA].FullName);
+        Assert.Equal(emailA, map[seekerA].Email);
+        Assert.Equal(nameB, map[seekerB].FullName);
+        Assert.Equal(emailB, map[seekerB].Email);
+        Assert.False(map.ContainsKey(unknown));
+        Assert.All(map, pair => Assert.Equal(pair.Key, pair.Value.Id));
+
+        Assert.Empty(identityApi.GetJobSeekers([]));
     }
 }

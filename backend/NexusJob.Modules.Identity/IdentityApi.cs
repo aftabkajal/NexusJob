@@ -31,4 +31,23 @@ internal sealed class IdentityApi(IdentityDbContext db) : IIdentityApi
             .Select(a => new CompanySummaryDto(a.Id, a.DisplayName))
             .ToDictionary(x => x.Id);
     }
+
+    public JobSeekerSummaryDto? GetJobSeeker(Guid id) =>
+        db.JobSeekerAccounts
+            .Where(a => a.Id == id)
+            .Select(a => new JobSeekerSummaryDto(a.Id, a.FullName, a.Email))
+            .SingleOrDefault();
+
+    public IReadOnlyDictionary<Guid, JobSeekerSummaryDto> GetJobSeekers(IReadOnlyCollection<Guid> ids)
+    {
+        if (ids.Count == 0)
+        {
+            return new Dictionary<Guid, JobSeekerSummaryDto>();
+        }
+
+        return db.JobSeekerAccounts
+            .Where(a => ids.Contains(a.Id))
+            .Select(a => new JobSeekerSummaryDto(a.Id, a.FullName, a.Email))
+            .ToDictionary(x => x.Id);
+    }
 }

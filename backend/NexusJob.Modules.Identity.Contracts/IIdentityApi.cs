@@ -24,4 +24,21 @@ public interface IIdentityApi
     /// round-trip.
     /// </summary>
     IReadOnlyDictionary<Guid, CompanySummaryDto> GetCompanies(IReadOnlyCollection<Guid> ids);
+
+    /// <summary>
+    /// Returns the summary of the Job Seeker with <paramref name="id"/>, or
+    /// <see langword="null"/> when no such Job Seeker exists. Use for a single-row
+    /// lookup (a detail read); a list/table projection must use
+    /// <see cref="GetJobSeekers"/> instead of calling this per row (AD-19).
+    /// </summary>
+    JobSeekerSummaryDto? GetJobSeeker(Guid id);
+
+    /// <summary>
+    /// Batch getter for list projections (AD-19): returns a map from Job Seeker id
+    /// to its summary, containing an entry only for each id in
+    /// <paramref name="ids"/> that resolves to a real Job Seeker. Unknown ids are
+    /// absent from the map; an empty <paramref name="ids"/> yields an empty map
+    /// with no database round-trip.
+    /// </summary>
+    IReadOnlyDictionary<Guid, JobSeekerSummaryDto> GetJobSeekers(IReadOnlyCollection<Guid> ids);
 }

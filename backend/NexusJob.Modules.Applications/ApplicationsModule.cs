@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using NexusJob.Modules.Applications.Auth;
 using NexusJob.Modules.Applications.Features.CreateApplication;
+using NexusJob.Modules.Applications.Features.GetApplicants;
 using NexusJob.Modules.Applications.Features.GetMyApplication;
 using NexusJob.Modules.Applications.Features.GetMyApplicationsList;
 using NexusJob.Modules.Applications.Persistence;
@@ -41,9 +42,11 @@ public static class ApplicationsModule
 
         services.AddScoped<AntiforgeryEndpointFilter>();
         services.AddScoped<JobSeekerOnlyEndpointFilter>();
+        services.AddScoped<CompanyOnlyEndpointFilter>();
         services.AddScoped<CreateApplicationHandler>();
         services.AddScoped<GetMyApplicationHandler>();
         services.AddScoped<GetMyApplicationsListHandler>();
+        services.AddScoped<GetApplicantsHandler>();
 
         return services;
     }
@@ -100,6 +103,22 @@ public static class ApplicationsModule
             .Produces<Page<MyApplicationListItemResponse>>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status403Forbidden);
+
+        // GET "" is a Company read on the same path as the existing POST create
+        // - different HTTP methods, no collision (spec 3.4a). Company-only:
+        // RequireAuthorization -> 401 for anonymous; CompanyOnly -> 403 for a
+        // signed-in Job Seeker; no antiforgery on a GET. Missing / non-GUID /
+        // not-owned jobPostingId is handled by the handler (400 / 404 - the
+        // ownership 404 is byte-identical to the missing-posting 404, AD-9).
+        group.MapGet("", GetApplicantsEndpoint.Handle)
+            .WithName("Applications_GetApplicants")
+            .RequireAuthorization()
+            .AddEndpointFilter<CompanyOnlyEndpointFilter>()
+            .Produces<Page<ApplicantListItemResponse>>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound);
 
         return endpoints;
     }
