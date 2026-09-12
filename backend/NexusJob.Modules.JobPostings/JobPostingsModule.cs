@@ -8,6 +8,7 @@ using NexusJob.Modules.JobPostings.Auth;
 using NexusJob.Modules.JobPostings.Contracts;
 using NexusJob.Modules.JobPostings.Features.CreateJobPosting;
 using NexusJob.Modules.JobPostings.Features.GetJobPostingById;
+using NexusJob.Modules.JobPostings.Features.GetMyJobPostings;
 using NexusJob.Modules.JobPostings.Features.SearchJobPostings;
 using NexusJob.Modules.JobPostings.Persistence;
 using Npgsql;
@@ -45,6 +46,7 @@ public static class JobPostingsModule
         services.AddScoped<CreateJobPostingHandler>();
         services.AddScoped<GetJobPostingByIdHandler>();
         services.AddScoped<SearchJobPostingsHandler>();
+        services.AddScoped<GetMyJobPostingsHandler>();
 
         // JobPostings' cross-module read surface (AD-19), published for Epic 3
         // consumers. Nothing consumes it yet (spec 2.2a: publish only).
@@ -91,6 +93,20 @@ public static class JobPostingsModule
             .Produces<JobPostingDetailResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
+
+        // /mine is a literal segment, registered alongside /{id:guid} - "mine"
+        // fails the :guid constraint regardless of registration order, so the
+        // two routes never conflict (spec Code Map). Company-only (AD-9-style
+        // ownership scoping, but for the caller's own rows): RequireAuthorization
+        // -> 401 for anonymous; CompanyOnly -> 403 for a signed-in Job Seeker; no
+        // antiforgery on a GET.
+        group.MapGet("/mine", GetMyJobPostingsEndpoint.Handle)
+            .WithName("JobPostings_GetMine")
+            .RequireAuthorization()
+            .AddEndpointFilter<CompanyOnlyEndpointFilter>()
+            .Produces<Page<JobPostingMineItemResponse>>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden);
 
         group.MapGet("", SearchJobPostingsEndpoint.Handle)
             .WithName("JobPostings_Search")

@@ -66,6 +66,20 @@ internal sealed record MyApplicationListItemDto(
     [property: JsonPropertyName("jobPostingTitle")] string JobPostingTitle,
     [property: JsonPropertyName("submittedAt")] DateTimeOffset SubmittedAt);
 
+/// <summary>One row of <c>GET /api/job-postings/mine</c>'s paged results: <c>{ id, title, description, createdAt }</c>.</summary>
+internal sealed record JobPostingMineItemDto(
+    [property: JsonPropertyName("id")] string Id,
+    [property: JsonPropertyName("title")] string Title,
+    [property: JsonPropertyName("description")] string Description,
+    [property: JsonPropertyName("createdAt")] DateTimeOffset CreatedAt);
+
+/// <summary>One row of <c>GET /api/applications</c>'s paged applicant results: <c>{ jobSeekerId, fullName, email, submittedAt }</c>.</summary>
+internal sealed record ApplicantListItemDto(
+    [property: JsonPropertyName("jobSeekerId")] string JobSeekerId,
+    [property: JsonPropertyName("fullName")] string FullName,
+    [property: JsonPropertyName("email")] string Email,
+    [property: JsonPropertyName("submittedAt")] DateTimeOffset SubmittedAt);
+
 /// <summary>The observed shape of <c>identity.job_seeker_account</c> after the migration.</summary>
 internal sealed record JobSeekerAccountSchema(
     IReadOnlyList<(string Name, string DataType, bool NotNull)> Columns,
@@ -543,5 +557,57 @@ internal sealed class AuthApiClient(HttpClient http)
 
         var queryString = parameters.Count == 0 ? string.Empty : $"?{string.Join('&', parameters)}";
         return http.GetAsync($"/api/applications/mine/list{queryString}");
+    }
+
+    /// <summary>
+    /// <c>GET /api/job-postings/mine?page=&amp;pageSize=</c> - a Company read (spec
+    /// 3.4a): no antiforgery seed (GET). The client's cookie container is used
+    /// as-is. Every parameter is optional; a <see langword="null"/> argument
+    /// omits that query-string entry (mirrors <see cref="SearchPostingsAsync"/>).
+    /// </summary>
+    public Task<HttpResponseMessage> GetMyPostingsAsync(int? page = null, int? pageSize = null)
+    {
+        var parameters = new List<string>();
+        if (page is not null)
+        {
+            parameters.Add($"page={page.Value}");
+        }
+
+        if (pageSize is not null)
+        {
+            parameters.Add($"pageSize={pageSize.Value}");
+        }
+
+        var queryString = parameters.Count == 0 ? string.Empty : $"?{string.Join('&', parameters)}";
+        return http.GetAsync($"/api/job-postings/mine{queryString}");
+    }
+
+    /// <summary>
+    /// <c>GET /api/applications?jobPostingId=&amp;page=&amp;pageSize=</c> - a
+    /// Company read (spec 3.4a): no antiforgery seed (GET). The client's cookie
+    /// container is used as-is. A <see langword="null"/> <paramref name="jobPostingId"/>
+    /// omits the query-string entry (the missing-param I/O-matrix row); <c>page</c>
+    /// / <c>pageSize</c> are optional (mirrors <see cref="SearchPostingsAsync"/>).
+    /// </summary>
+    public Task<HttpResponseMessage> GetApplicantsAsync(string? jobPostingId, int? page = null, int? pageSize = null)
+    {
+        var parameters = new List<string>();
+        if (jobPostingId is not null)
+        {
+            parameters.Add($"jobPostingId={Uri.EscapeDataString(jobPostingId)}");
+        }
+
+        if (page is not null)
+        {
+            parameters.Add($"page={page.Value}");
+        }
+
+        if (pageSize is not null)
+        {
+            parameters.Add($"pageSize={pageSize.Value}");
+        }
+
+        var queryString = parameters.Count == 0 ? string.Empty : $"?{string.Join('&', parameters)}";
+        return http.GetAsync($"/api/applications{queryString}");
     }
 }

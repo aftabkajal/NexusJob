@@ -458,6 +458,64 @@ export class JobPostingsClient {
         }
         return Promise.resolve<JobPostingDetailResponse>(null as any);
     }
+
+    /**
+     * @param page (optional) 
+     * @param pageSize (optional) 
+     * @return OK
+     */
+    getMine(page: any | undefined, pageSize: any | undefined): Promise<PageOfJobPostingMineItemResponse> {
+        let url_ = this.baseUrl + "/api/job-postings/mine?";
+        if (page === null)
+            throw new globalThis.Error("The parameter 'page' cannot be null.");
+        else if (page !== undefined)
+            url_ += "page=" + encodeURIComponent("" + page) + "&";
+        if (pageSize === null)
+            throw new globalThis.Error("The parameter 'pageSize' cannot be null.");
+        else if (pageSize !== undefined)
+            url_ += "pageSize=" + encodeURIComponent("" + pageSize) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetMine(_response);
+        });
+    }
+
+    protected processGetMine(response: Response): Promise<PageOfJobPostingMineItemResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as PageOfJobPostingMineItemResponse;
+            return result200;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Forbidden", status, _responseText, _headers, result403);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<PageOfJobPostingMineItemResponse>(null as any);
+    }
 }
 
 export class ApplicationsClient {
@@ -532,6 +590,80 @@ export class ApplicationsClient {
             });
         }
         return Promise.resolve<ApplicationResponse>(null as any);
+    }
+
+    /**
+     * @param page (optional) 
+     * @param pageSize (optional) 
+     * @return OK
+     */
+    getApplicants(jobPostingId: string, page: any | undefined, pageSize: any | undefined): Promise<PageOfApplicantListItemResponse> {
+        let url_ = this.baseUrl + "/api/applications?";
+        if (jobPostingId === undefined || jobPostingId === null)
+            throw new globalThis.Error("The parameter 'jobPostingId' must be defined and cannot be null.");
+        else
+            url_ += "jobPostingId=" + encodeURIComponent("" + jobPostingId) + "&";
+        if (page === null)
+            throw new globalThis.Error("The parameter 'page' cannot be null.");
+        else if (page !== undefined)
+            url_ += "page=" + encodeURIComponent("" + page) + "&";
+        if (pageSize === null)
+            throw new globalThis.Error("The parameter 'pageSize' cannot be null.");
+        else if (pageSize !== undefined)
+            url_ += "pageSize=" + encodeURIComponent("" + pageSize) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetApplicants(_response);
+        });
+    }
+
+    protected processGetApplicants(response: Response): Promise<PageOfApplicantListItemResponse> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as PageOfApplicantListItemResponse;
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Bad Request", status, _responseText, _headers, result400);
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            let result401: any = null;
+            result401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            });
+        } else if (status === 403) {
+            return response.text().then((_responseText) => {
+            let result403: any = null;
+            result403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Forbidden", status, _responseText, _headers, result403);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("Not Found", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<PageOfApplicantListItemResponse>(null as any);
     }
 
     /**
@@ -651,6 +783,15 @@ export class ApplicationsClient {
     }
 }
 
+export interface ApplicantListItemResponse {
+    jobSeekerId: string;
+    fullName: string;
+    email: string;
+    submittedAt: string;
+
+    [key: string]: any;
+}
+
 export interface ApplicationResponse {
     id: string;
     jobPostingId: string;
@@ -695,6 +836,15 @@ export interface JobPostingDetailResponse {
     [key: string]: any;
 }
 
+export interface JobPostingMineItemResponse {
+    id: string;
+    title: string;
+    description: string;
+    createdAt: string;
+
+    [key: string]: any;
+}
+
 export interface JobPostingResponse {
     id: string;
     title: string;
@@ -733,6 +883,24 @@ export interface MyApplicationListItemResponse {
 export interface MyApplicationResponse {
     applied: boolean;
     appliedAt: string | undefined;
+
+    [key: string]: any;
+}
+
+export interface PageOfApplicantListItemResponse {
+    items: ApplicantListItemResponse[];
+    page: any;
+    pageSize: any;
+    total: any;
+
+    [key: string]: any;
+}
+
+export interface PageOfJobPostingMineItemResponse {
+    items: JobPostingMineItemResponse[];
+    page: any;
+    pageSize: any;
+    total: any;
 
     [key: string]: any;
 }
