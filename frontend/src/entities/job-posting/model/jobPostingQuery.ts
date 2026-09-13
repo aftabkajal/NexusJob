@@ -43,3 +43,24 @@ export function useJobPostingSearch(query: string, page: number, pageSize: numbe
     queryFn: () => jobPostingsClient.search(query, page, pageSize),
   })
 }
+
+/**
+ * The `mine` query key, owned by this slice (AD-16): `['job-postings',
+ * 'mine', page, pageSize]`.
+ */
+export const jobPostingsMineQueryKey = (page: number, pageSize: number) =>
+  ['job-postings', 'mine', page, pageSize] as const
+
+/**
+ * Read a page of the signed-in Company's own postings. A bare `useQuery`, no
+ * `staleTime: Infinity` (mirrors `useJobPostingSearch`) — the list changes as
+ * the Company posts more jobs. No `enabled` gate: this query only ever mounts
+ * inside `MyPostingsPage`, which is itself already gated to a resolved
+ * Company session before rendering the list.
+ */
+export function useMyJobPostings(page: number, pageSize: number) {
+  return useQuery({
+    queryKey: jobPostingsMineQueryKey(page, pageSize),
+    queryFn: () => jobPostingsClient.getMine(page, pageSize),
+  })
+}

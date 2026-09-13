@@ -208,3 +208,58 @@ describe('jobPostingsClient.search', () => {
     expect(urlOf(0)).toBe('/api/job-postings?query=&page=1&pageSize=20')
   })
 })
+
+describe('jobPostingsClient.getMine', () => {
+  it('issues GET /api/job-postings/mine with the two params and resolves the PageOfJobPostingMineItemResponse', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(200, {
+        items: [
+          {
+            id: 'jp-1',
+            title: 'Staff Engineer',
+            description: 'Build the platform.',
+            createdAt: '2026-09-08T00:00:00Z',
+          },
+        ],
+        page: 1,
+        pageSize: 20,
+        total: 1,
+      }),
+    )
+
+    const result = await jobPostingsClient.getMine(1, 20)
+
+    expect(result).toEqual({
+      items: [
+        {
+          id: 'jp-1',
+          title: 'Staff Engineer',
+          description: 'Build the platform.',
+          createdAt: '2026-09-08T00:00:00Z',
+        },
+      ],
+      page: 1,
+      pageSize: 20,
+      total: 1,
+    })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(urlOf(0)).toBe('/api/job-postings/mine?page=1&pageSize=20')
+    expect((initOf(0).method ?? 'GET').toUpperCase()).toBe('GET')
+    expect(initOf(0).credentials).toBe('include')
+    expect(headerOf(0, 'X-CSRF-TOKEN')).toBeNull()
+  })
+
+  it('propagates a 401 unchanged, with no CSRF seed or retry', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(401, { title: 'Unauthorized', status: 401 }))
+
+    await expect(jobPostingsClient.getMine(1, 20)).rejects.toMatchObject({ status: 401 })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('propagates a 403 unchanged, with no CSRF seed or retry', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(403, { title: 'Forbidden', status: 403 }))
+
+    await expect(jobPostingsClient.getMine(1, 20)).rejects.toMatchObject({ status: 403 })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+})

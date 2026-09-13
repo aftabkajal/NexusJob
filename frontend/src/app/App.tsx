@@ -3,8 +3,10 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { createBrowserRouter, RouterProvider, type RouteObject } from 'react-router'
 
 import {
+  ApplicantsPage,
   HomePage,
   MyApplicationsPage,
+  MyPostingsPage,
   NotFoundPage,
   PostAJobPage,
   PostingDetailPage,
@@ -36,9 +38,11 @@ export function RouteError() {
  * `/post-a-job` → `PostAJobPage` (guarded to a signed-in Company);
  * `/job-postings/:id` → `PostingDetailPage` (open to everyone);
  * `/my-applications` → `MyApplicationsPage` (guarded to a signed-in Job
- * Seeker); anything else → `NotFoundPage`, still inside the shell. The Host serves
- * `index.html` for every non-`/api` path (story 1.1), so these client paths
- * resolve on a hard refresh.
+ * Seeker); `/my-postings` → `MyPostingsPage` and
+ * `/my-postings/:id/applicants` → `ApplicantsPage` (both guarded to a
+ * signed-in Company); anything else → `NotFoundPage`, still inside the shell.
+ * The Host serves `index.html` for every non-`/api` path (story 1.1), so
+ * these client paths resolve on a hard refresh.
  *
  * `AppShell` takes no `viewer` prop here — it derives the viewer from
  * `useSession()` (`GET /api/auth/me`). Exported so a test can mount the same
@@ -55,6 +59,8 @@ export const routes: RouteObject[] = [
       { path: 'post-a-job', element: <PostAJobPage /> },
       { path: 'job-postings/:id', element: <PostingDetailPage /> },
       { path: 'my-applications', element: <MyApplicationsPage /> },
+      { path: 'my-postings', element: <MyPostingsPage /> },
+      { path: 'my-postings/:id/applicants', element: <ApplicantsPage /> },
       { path: '*', element: <NotFoundPage /> },
     ],
   },

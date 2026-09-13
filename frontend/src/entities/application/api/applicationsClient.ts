@@ -2,10 +2,12 @@ import {
   ApplicationsClient,
   callWithCsrfRetry,
   createHttp,
+  type ApplicantListItemResponse,
   type ApplicationResponse,
   type CreateApplicationRequest,
   type MyApplicationListItemResponse,
   type MyApplicationResponse,
+  type PageOfApplicantListItemResponse,
   type PageOfMyApplicationListItemResponse,
 } from '../../../shared/api'
 
@@ -53,12 +55,28 @@ export const applicationsClient = {
    */
   getMyApplications: (page: number, pageSize: number): Promise<PageOfMyApplicationListItemResponse> =>
     rawClient.getMyApplications(page, pageSize),
+  /**
+   * Read a page of a posting's applicants (`GET
+   * /api/applications?jobPostingId=&page=&pageSize=`), most-recent first. A
+   * `GET`, so no `callWithCsrfRetry`. The generated `getApplicants`'s `page` /
+   * `pageSize` params are typed `any` — the same pre-existing NSwag gap as
+   * `getMyApplications` (deferred-work.md); this wrapper re-types both as
+   * `number`. The endpoint `404`s a missing or not-owned posting (3-4a); any
+   * other failure propagates to the caller unchanged.
+   */
+  getApplicants: (
+    jobPostingId: string,
+    page: number,
+    pageSize: number,
+  ): Promise<PageOfApplicantListItemResponse> => rawClient.getApplicants(jobPostingId, page, pageSize),
 }
 
 export type {
+  ApplicantListItemResponse,
   ApplicationResponse,
   CreateApplicationRequest,
   MyApplicationListItemResponse,
   MyApplicationResponse,
+  PageOfApplicantListItemResponse,
   PageOfMyApplicationListItemResponse,
 }

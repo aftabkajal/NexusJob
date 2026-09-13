@@ -192,3 +192,51 @@ describe('applicationsClient.getMyApplications', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 })
+
+describe('applicationsClient.getApplicants', () => {
+  it('issues GET /api/applications with jobPostingId, page, and pageSize, resolving the page', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(200, {
+        items: [
+          {
+            jobSeekerId: 'js-1',
+            fullName: 'Priya Raman',
+            email: 'priya@example.com',
+            submittedAt: '2026-09-11T00:00:00Z',
+          },
+        ],
+        page: 1,
+        pageSize: 20,
+        total: 1,
+      }),
+    )
+
+    const result = await applicationsClient.getApplicants('jp-1', 1, 20)
+
+    expect(result.total).toBe(1)
+    expect(result.items[0]?.fullName).toBe('Priya Raman')
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(urlOf(0)).toBe('/api/applications?jobPostingId=jp-1&page=1&pageSize=20')
+    expect((initOf(0).method ?? 'GET').toUpperCase()).toBe('GET')
+    expect(initOf(0).credentials).toBe('include')
+    expect(headerOf(0, 'X-CSRF-TOKEN')).toBeNull()
+  })
+
+  it('propagates a 404 for a missing or not-owned posting, with no CSRF seed or retry', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(404, { title: 'Not Found', status: 404 }))
+
+    await expect(applicationsClient.getApplicants('missing', 1, 20)).rejects.toMatchObject({
+      status: 404,
+    })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('propagates a 403 for a caller that is not a Company, with no CSRF seed or retry', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(403, { title: 'Forbidden', status: 403 }))
+
+    await expect(applicationsClient.getApplicants('jp-1', 1, 20)).rejects.toMatchObject({
+      status: 403,
+    })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+})

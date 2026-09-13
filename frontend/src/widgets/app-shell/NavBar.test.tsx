@@ -59,7 +59,7 @@ describe('NavBar — signed-in Company viewer', () => {
     return { onLogOut }
   }
 
-  it('renders Search, Post a Job, the display name, and a Log out control', () => {
+  it('renders Search, Post a Job, My Postings, the display name, and a Log out control', () => {
     renderCompanyNavBar()
 
     const nav = screen.getByRole('navigation', { name: 'Primary' })
@@ -67,16 +67,20 @@ describe('NavBar — signed-in Company viewer', () => {
       within(nav)
         .getAllByRole('link')
         .map((link) => link.textContent),
-    ).toEqual(['Search', 'Post a Job'])
+    ).toEqual(['Search', 'Post a Job', 'My Postings'])
     expect(within(nav).getByRole('link', { name: 'Post a Job' })).toHaveAttribute(
       'href',
       '/post-a-job',
+    )
+    expect(within(nav).getByRole('link', { name: 'My Postings' })).toHaveAttribute(
+      'href',
+      '/my-postings',
     )
     expect(within(nav).getByText('Cobalt Ledger')).toBeInTheDocument()
     expect(within(nav).getByRole('button', { name: 'Log out' })).toBeInTheDocument()
   })
 
-  it('shows Post a Job but no other role-restricted surface', () => {
+  it('shows Post a Job and My Postings but no other role-restricted surface', () => {
     renderCompanyNavBar()
 
     const nav = screen.getByRole('navigation', { name: 'Primary' })
@@ -84,11 +88,11 @@ describe('NavBar — signed-in Company viewer', () => {
       .getAllByRole('link')
       .map((link) => link.getAttribute('href'))
     expect(hrefs).toContain('/post-a-job')
-    expect(hrefs).not.toContain('/my-postings')
+    expect(hrefs).toContain('/my-postings')
     expect(hrefs).not.toContain('/my-applications')
     expect(
       navItemsFor({ kind: 'company', displayName: 'Cobalt Ledger' }).map((item) => item.to),
-    ).toEqual(['/', '/post-a-job'])
+    ).toEqual(['/', '/post-a-job', '/my-postings'])
   })
 
   it('invokes onLogOut when Log out is activated', async () => {

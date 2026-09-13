@@ -1,0 +1,1 @@
+export { MyPostingsPage } from './MyPostingsPage'

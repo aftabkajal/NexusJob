@@ -16,11 +16,16 @@ import { routes } from './App'
 // their own modules so the real `useJobPosting` / `useMyApplications` queryFns
 // (which import them directly, not via the barrel) pick the mocks up too.
 vi.mock('../entities/job-posting/api/jobPostingsClient', () => ({
-  jobPostingsClient: { create: vi.fn(), getById: vi.fn(), search: vi.fn() },
+  jobPostingsClient: { create: vi.fn(), getById: vi.fn(), search: vi.fn(), getMine: vi.fn() },
 }))
 
 vi.mock('../entities/application/api/applicationsClient', () => ({
-  applicationsClient: { apply: vi.fn(), getMine: vi.fn(), getMyApplications: vi.fn() },
+  applicationsClient: {
+    apply: vi.fn(),
+    getMine: vi.fn(),
+    getMyApplications: vi.fn(),
+    getApplicants: vi.fn(),
+  },
 }))
 
 vi.mock('../entities', async (importOriginal) => {
@@ -39,13 +44,17 @@ vi.mock('../entities', async (importOriginal) => {
 const create = vi.mocked(jobPostingsClient.create)
 const getById = vi.mocked(jobPostingsClient.getById)
 const search = vi.mocked(jobPostingsClient.search)
+const getMine = vi.mocked(jobPostingsClient.getMine)
 const getMyApplications = vi.mocked(applicationsClient.getMyApplications)
+const getApplicants = vi.mocked(applicationsClient.getApplicants)
 
 beforeEach(() => {
   create.mockReset()
   getById.mockReset()
   search.mockReset()
+  getMine.mockReset()
   getMyApplications.mockReset()
+  getApplicants.mockReset()
   // Every mounted route can render the shell, and the shell's Home surface
   // always runs a browse-all search — default it to an empty, resolved page
   // so tests that don't care about Home's results (nav / auth / redirect
@@ -160,15 +169,18 @@ describe('App routing — signed-in Company viewer', () => {
     ).not.toBeInTheDocument()
   })
 
-  it('shows the Company nav (Search + Post a Job + display name + Log out)', () => {
+  it('shows the Company nav (Search + Post a Job + My Postings + display name + Log out)', () => {
     renderAt('/', { kind: 'company', id: 'c-1', displayName: 'Cobalt Ledger' })
 
     const nav = screen.getByRole('navigation', { name: 'Primary' })
     expect(nav).toHaveTextContent('Search')
     expect(screen.getByRole('link', { name: 'Post a Job' })).toHaveAttribute('href', '/post-a-job')
+    expect(screen.getByRole('link', { name: 'My Postings' })).toHaveAttribute(
+      'href',
+      '/my-postings',
+    )
     expect(nav).toHaveTextContent('Cobalt Ledger')
     expect(screen.getByRole('button', { name: 'Log out' })).toBeInTheDocument()
-    expect(screen.queryByRole('link', { name: 'My Postings' })).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'My Applications' })).not.toBeInTheDocument()
   })
 
@@ -339,5 +351,115 @@ describe('App routing — /my-applications guard', () => {
       screen.getByRole('heading', { name: 'Find your next role. Post your next hire.' }),
     ).toBeInTheDocument()
     expect(getMyApplications).not.toHaveBeenCalled()
+  })
+})
+
+describe('App routing — /my-postings guard', () => {
+  it('renders the list for a signed-in Company', async () => {
+    getMine.mockResolvedValue({
+      items: [
+        {
+          id: 'jp-1',
+          title: 'Staff Engineer',
+          description: 'Build the platform.',
+          createdAt: '2026-09-11T00:00:00Z',
+        },
+      ],
+      page: 1,
+      pageSize: 20,
+      total: 1,
+    })
+    renderAt('/my-postings', { kind: 'company', id: 'c-1', displayName: 'Cobalt Ledger' })
+
+    expect(await screen.findByText('Staff Engineer')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Staff Engineer/ })).toHaveAttribute(
+      'href',
+      '/my-postings/jp-1/applicants',
+    )
+    expect(getMine).toHaveBeenCalledWith(1, 20)
+  })
+
+  it('redirects a signed-in Job Seeker at /my-postings to "/"', () => {
+    renderAt('/my-postings', { kind: 'jobSeeker', id: 'js-1', displayName: 'Priya Raman' })
+
+    expect(
+      screen.getByRole('heading', { name: 'Find your next role. Post your next hire.' }),
+    ).toBeInTheDocument()
+    expect(getMine).not.toHaveBeenCalled()
+  })
+
+  it('redirects an anonymous viewer at /my-postings to "/"', () => {
+    renderAt('/my-postings')
+
+    expect(
+      screen.getByRole('heading', { name: 'Find your next role. Post your next hire.' }),
+    ).toBeInTheDocument()
+    expect(getMine).not.toHaveBeenCalled()
+  })
+})
+
+describe('App routing — /my-postings/:id/applicants guard', () => {
+  it('renders the applicants list for a signed-in Company', async () => {
+    getApplicants.mockResolvedValue({
+      items: [
+        {
+          jobSeekerId: 'js-1',
+          fullName: 'Priya Raman',
+          email: 'priya@example.com',
+          submittedAt: '2026-09-11T00:00:00Z',
+        },
+      ],
+      page: 1,
+      pageSize: 20,
+      total: 1,
+    })
+    renderAt('/my-postings/jp-1/applicants', {
+      kind: 'company',
+      id: 'c-1',
+      displayName: 'Cobalt Ledger',
+    })
+
+    expect(await screen.findByText('Priya Raman')).toBeInTheDocument()
+    expect(screen.getByText('priya@example.com')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Back to My Postings' })).toHaveAttribute(
+      'href',
+      '/my-postings',
+    )
+    expect(getApplicants).toHaveBeenCalledWith('jp-1', 1, 20)
+  })
+
+  it('shows "This posting is no longer available." for a not-owned or missing posting', async () => {
+    getApplicants.mockRejectedValue({ status: 404, title: 'Not Found' })
+    renderAt('/my-postings/other-co-posting/applicants', {
+      kind: 'company',
+      id: 'c-1',
+      displayName: 'Cobalt Ledger',
+    })
+
+    expect(
+      await screen.findByText('This posting is no longer available.'),
+    ).toBeInTheDocument()
+  })
+
+  it('redirects a signed-in Job Seeker at /my-postings/:id/applicants to "/"', () => {
+    renderAt('/my-postings/jp-1/applicants', {
+      kind: 'jobSeeker',
+      id: 'js-1',
+      displayName: 'Priya Raman',
+    })
+
+    expect(
+      screen.getByRole('heading', { name: 'Find your next role. Post your next hire.' }),
+    ).toBeInTheDocument()
+    expect(getApplicants).not.toHaveBeenCalled()
+  })
+
+  it('redirects an anonymous viewer at /my-postings/:id/applicants to "/"', () => {
+    renderAt('/my-postings/jp-1/applicants')
+
+    expect(
+      screen.getByRole('heading', { name: 'Find your next role. Post your next hire.' }),
+    ).toBeInTheDocument()
+    expect(getApplicants).not.toHaveBeenCalled()
   })
 })

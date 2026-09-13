@@ -8,15 +8,19 @@
 // both, lives in `features/apply-to-posting`.
 export {
   applicationsClient,
+  type ApplicantListItemResponse,
   type ApplicationResponse,
   type CreateApplicationRequest,
   type MyApplicationListItemResponse,
   type MyApplicationResponse,
+  type PageOfApplicantListItemResponse,
   type PageOfMyApplicationListItemResponse,
 } from './api/applicationsClient'
 export {
+  applicantsQueryKey,
   applicationMineQueryKey,
   applicationsMineListQueryKey,
+  useApplicants,
   useMyApplication,
   useMyApplications,
 } from './model/applicationQuery'

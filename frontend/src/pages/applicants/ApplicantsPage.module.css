@@ -1,0 +1,201 @@
+/*
+ * `/my-postings/:id/applicants` — DESIGN.md `{components.applicant-row}`: one
+ * bordered `.list` container (`--color-surface`, `--color-border`,
+ * `--radius-lg`), each `.row` a full-bleed divider row inside it —
+ * `border-bottom: 1px solid var(--color-border)`, no per-row surface/radius/
+ * hover, `:last-child` drops the divider. `.name` is body/`text-primary`,
+ * `.email` body-sm/`text-secondary`, `.timestamp` caption/`text-secondary`,
+ * right-aligned. `.message`, `.empty-state`, `.error-banner`, `.retry-button`
+ * and `.backLink` mirror `PostingDetailPage.module.css` / `MyApplicationsPage
+ * .module.css` verbatim — same tokens, same shapes. The skeleton row shell
+ * mirrors `.row`'s layout with shimmer lines; `@keyframes skeleton-pulse` and
+ * its reduced-motion guard are copied from `MyApplicationsPage.module.css`
+ * verbatim.
+ */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.results {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* Screen-reader-only heading / loading label. */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.backLink {
+  align-self: flex-start;
+  color: var(--color-accent);
+  text-decoration: underline;
+  font-size: var(--text-body-sm-size);
+  font-weight: var(--text-body-sm-weight);
+  line-height: var(--text-body-sm-line);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.name {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: var(--text-body-size);
+  font-weight: var(--text-body-weight);
+  line-height: var(--text-body-line);
+}
+
+.email {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-body-sm-size);
+  font-weight: var(--text-body-sm-weight);
+  line-height: var(--text-body-sm-line);
+}
+
+.timestamp {
+  flex-shrink: 0;
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-caption-size);
+  font-weight: var(--text-caption-weight);
+  line-height: var(--text-caption-line);
+  letter-spacing: var(--text-caption-tracking);
+  text-align: right;
+}
+
+/*
+ * Skeleton row shell — mirrors `.row` / `.info`'s layout with shimmer lines,
+ * `@keyframes skeleton-pulse`, and its `prefers-reduced-motion` suppression
+ * (copied from `MyApplicationsPage.module.css` verbatim).
+ */
+.skeletonLine {
+  display: block;
+  background-color: var(--color-border);
+  border-radius: var(--radius-sm);
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+.skeletonName {
+  width: 140px;
+  height: var(--space-4);
+}
+
+.skeletonEmail {
+  width: 200px;
+  height: var(--space-4);
+}
+
+.skeletonTimestamp {
+  flex-shrink: 0;
+  width: 80px;
+  height: var(--space-4);
+}
+
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeletonLine {
+    animation: none;
+  }
+}
+
+.message {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: var(--text-body-size);
+  font-weight: var(--text-body-weight);
+  line-height: var(--text-body-line);
+}
+
+.empty-state {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-line);
+}
+
+/*
+ * Failure banner — mirrors `MyApplicationsPage.module.css`'s `.error-banner`:
+ * `--color-danger` text on `--color-danger-subtle`.
+ */
+.error-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  color: var(--color-danger);
+  background-color: var(--color-danger-subtle);
+  border-radius: var(--radius-md);
+  font-size: var(--text-body-sm-size);
+  font-weight: var(--text-body-sm-weight);
+  line-height: var(--text-body-sm-line);
+}
+
+.error-banner p {
+  margin: 0;
+}
+
+.retry-button {
+  flex-shrink: 0;
+  padding: var(--space-2) var(--space-4);
+  color: var(--color-danger);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
+  font-family: var(--font-family);
+  font-size: var(--text-label-size);
+  font-weight: var(--text-label-weight);
+  line-height: var(--text-label-line);
+  letter-spacing: var(--text-label-tracking);
+  cursor: pointer;
+}
